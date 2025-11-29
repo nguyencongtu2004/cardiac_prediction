@@ -1,0 +1,50 @@
+# Airflow logs
+logs/
+*.log
+
+# Data files
+*.csv
+*.parquet
+*/data/*.csv
+*/data/*.parquet
+projects/*/data/train_data/
+projects/*/data/valid_data/
+projects/*/data/test_data/
+
+# Model files (large binary files)
+models/
+projects/*/models/cardiac_rf_model/
+projects/*/models/*.pt
+*.model
+*.pkl
+
+# Checkpoints
+*/checkpoints/
+*.checkpoint
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+/tmp/

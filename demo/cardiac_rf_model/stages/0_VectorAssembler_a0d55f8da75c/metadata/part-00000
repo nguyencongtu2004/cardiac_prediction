@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.VectorAssembler","timestamp":1764036479375,"sparkVersion":"3.5.1","uid":"VectorAssembler_a0d55f8da75c","paramMap":{"outputCol":"continuous_vec","inputCols":["heart_rate","bp_sys","bp_dia","spo2","resp_rate","age"]},"defaultParamMap":{"outputCol":"VectorAssembler_a0d55f8da75c__output","handleInvalid":"error"}}
