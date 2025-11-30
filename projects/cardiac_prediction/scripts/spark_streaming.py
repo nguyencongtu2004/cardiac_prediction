@@ -7,7 +7,7 @@ import os
 # Cấu hình
 KAFKA_BOOTSTRAP_SERVERS = 'kafka:9092'
 KAFKA_TOPIC = 'cardiac_data'
-MODEL_PATH = '/opt/airflow/projects/cardiac_prediction/models/cardiac_rf_model' # Đường dẫn mô hình đã huấn luyện
+MODEL_PATH = '/opt/airflow/models/cardiac_rf_model'  # Model trained with SMOTE + Ensemble
 POSTGRES_URL = "jdbc:postgresql://postgres:5432/airflow"
 POSTGRES_PROPERTIES = {
     "user": "airflow",

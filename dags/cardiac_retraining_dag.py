@@ -10,6 +10,10 @@ from datetime import datetime, timedelta
 import json
 import os
 
+# Custom BashOperator that doesn't template bash_command
+class SimpleBashOperator(BashOperator):
+    template_fields = ('env',)  # Only template env vars, not bash_command
+
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -30,7 +34,7 @@ dag = DAG(
 )
 
 # Train new model
-train_model = BashOperator(
+train_model = SimpleBashOperator(
     task_id='train_model',
     bash_command='bash /opt/airflow/projects/cardiac_prediction/scripts/run_model_train.sh',
     dag=dag
