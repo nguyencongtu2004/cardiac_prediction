@@ -1,92 +1,67 @@
-# Project Complete: Cardiac Admission Outcome Prediction ✅
+# Cardiac Admission Prediction System
 
-## Overview
-End-to-end Big Data streaming ML system for predicting cardiac readmission risk using PySpark, Kafka, Airflow, and Streamlit.
+## 📖 Overview
+This project implements an end-to-end **Real-time Cardiac Admission Prediction System** using Big Data technologies. It ingests simulated patient health data, processes it in real-time using **Apache Spark**, applies a Machine Learning model to predict hospital admission risk, and visualizes the results on a **Streamlit** dashboard.
 
-## Architecture
+## 🏗 Architecture
+The system follows a Lambda Architecture-inspired approach for real-time processing:
+
+1.  **Data Source**: A Kafka Producer simulates real-time patient vitals (Heart Rate, BP, SPO2, etc.).
+2.  **Message Queue**: **Apache Kafka** buffers the streaming data.
+3.  **Stream Processing**: **Spark Structured Streaming** consumes data from Kafka, applies a pre-trained **Random Forest** model, and writes predictions to PostgreSQL.
+4.  **Storage**: **PostgreSQL** stores raw data, predictions, and model metadata.
+5.  **Visualization**: **Streamlit** provides a real-time dashboard for monitoring predictions and system health.
+6.  **Orchestration**: **Apache Airflow** manages the lifecycle of streaming jobs and automates daily model retraining.
+
+## 🚀 Quick Start
+
+### Prerequisites
+*   Docker & Docker Compose installed.
+*   Git.
+
+### Installation & Running
+
+1.  **Start the Infrastructure**:
+    ```bash
+    docker-compose up -d
+    ```
+
+2.  **Initialize the Database**:
+    ```bash
+    bash config/setup_database.sh
+    ```
+
+3.  **Start the Streaming Pipeline**:
+    *   **Option A (Recommended - via Airflow)**:
+        1.  Access Airflow UI at [http://localhost:8080](http://localhost:8080) (User/Pass: `airflow`/`airflow`).
+        2.  Trigger the DAG: `cardiac_streaming_lifecycle`.
+    *   **Option B (Manual)**:
+        ```bash
+        # Start Producer
+        docker exec -d airflow-airflow-worker-1 python3 /opt/airflow/projects/cardiac_prediction/scripts/producer.py
+        
+        # Start Spark Job
+        docker exec -d airflow-airflow-worker-1 spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.postgresql:postgresql:42.6.0 /opt/airflow/projects/cardiac_prediction/scripts/spark_streaming.py
+        ```
+
+4.  **View the Dashboard**:
+    *   Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+### 🔄 Model Retraining
+The system includes an automated pipeline (`cardiac_model_retraining`) that runs daily to:
+1.  Train a new model on the latest data.
+2.  Evaluate it against the current production model.
+3.  Automatically promote the new model if it performs better.
+
+## 📂 Project Structure
 ```
-Data → PySpark ML Pipeline → Kafka → Spark Streaming → Predictions
-                ↓                                           ↓
-            Airflow DAGs ← Model Retraining ← Dashboard (Streamlit)
+projects/cardiac_prediction/
+├── scripts/
+│   ├── producer.py          # Kafka Data Generator
+│   ├── spark_streaming.py   # Real-time Inference Job
+│   ├── cardiac_model_train.py # Model Training Script
+│   └── run_model_train.sh   # Training Wrapper
+├── streamlit/
+│   └── streamlit_app.py     # Dashboard
+└── models/                  # Model Artifacts
 ```
-
-## Completed Phases
-
-### ✅ Phase 0: Environment Setup
-- Docker Compose stack (Kafka, Airflow, Spark, PostgreSQL)
-- Custom Airflow image with PySpark 3.5.1
-
-### ✅ Phase 1: Data Preparation
-- Dataset: 5,000 cardiac records (9.4:1 imbalance)
-- Train/Valid/Test split (71.5% / 14.7% / 13.8%)
-- 11 features (6 continuous + 5 binary)
-
-### ✅ Phase 2: ML Pipeline
-- Random Forest Classifier
-- Metrics: AUC-ROC 0.99, F1 0.96, Accuracy 0.96
-- Packaged PipelineModel for streaming
-
-### ✅ Phase 3: Streaming Pipeline
-- **Kafka Producer**: Simulates cardiac events
-- **Spark Structured Streaming**: Real-time inference
-- Model location: `/projects/cardiac_prediction/models/cardiac_rf_model/`
-
-### ✅ Phase 4: Airflow Orchestration
-- **DAG 1** (`cardiac_streaming_lifecycle`): Manage streaming jobs
-- **DAG 2** (`cardiac_model_retraining`): Daily retraining with auto-promotion
-
-### ✅ Phase 5: Streamlit Dashboard
-- Model metrics visualization
-- System status monitoring
-- Quick start guide
-- Access: http://localhost:8501
-
-## Key Files
-
-### Scripts
-- `cardiac_data_prep.py` - Data preprocessing
-- `cardiac_model_train.py` - Model training
-- `cardiac_producer.py` - Kafka producer
-- `cardiac_streaming.inference.py` - Streaming consumer
-
-### DAGs
-- `cardiac_streaming_dag.py` - Streaming lifecycle
-- `cardiac_retraining_dag.py` - Model retraining
-
-### Dashboard
-- `streamlit_app.py` - Dashboard UI
-
-## Quick Start
-
-### 1. Train Model (if not done)
-```bash
-docker exec airflow-airflow-worker-1 bash /opt/airflow/projects/cardiac_prediction/scripts/run_model_train.sh
-```
-
-### 2. Run Streaming Demo
-```bash
-docker exec -it airflow-airflow-worker-1 bash
-bash /opt/airflow/projects/cardiac_prediction/scripts/run_streaming.sh
-```
-
-### 3. View Dashboard
-Open http://localhost:8501
-
-### 4. Airflow DAGs
-- Open http://localhost:8080 (user: airflow, pass: airflow)
-- Enable and trigger `cardiac_streaming_lifecycle`
-- `cardiac_model_retraining` runs daily automatically
-
-## Technical Highlights
-- ✅ Packaged PipelineModel for reproducibility
-- ✅ Structured Streaming with checkpointing
-- ✅ Class imbalance handling with weights
-- ✅ Automated model promotion based on metrics
-- ✅ Full Docker containerization
-
-## Next Steps (Future Improvements)
-1. Add PostgreSQL sink for predictions
-2. Implement alerts for high-risk patients
-3. Add more sophisticated hyperparameter tuning
-4. Deploy to cloud (AWS/GCP/Azure)
-5. Add model explainability (SHAP/LIME)

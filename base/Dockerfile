@@ -19,21 +19,6 @@ RUN pip install --no-cache-dir -r /tmp/base_requirements.txt && \
         /home/airflow/.local/lib/python3.*/site-packages/kafka/codec.py || true
 
 # ================================
-# 🔧 Copy scripts và cấp quyền thực thi (chuẩn reproducible)
-# ================================
-USER root
-COPY projects/absa_streaming/scripts /opt/airflow/projects/absa_streaming/scripts
-RUN chmod +x /opt/airflow/projects/absa_streaming/scripts/*.sh
-USER airflow
-
-# Copy thư mục streamlit của project vào image
-COPY projects/absa_streaming/streamlit /opt/airflow/projects/absa_streaming/streamlit
-
-# Cài các thư viện cần thiết cho Streamlit
-USER airflow
-RUN pip install --no-cache-dir streamlit psycopg2-binary pandas
-
-# ================================
 # 🔧 Cardiac Prediction Project
 # ================================
 USER root
@@ -42,3 +27,7 @@ RUN chmod +x /opt/airflow/projects/cardiac_prediction/scripts/*.sh
 USER airflow
 
 COPY projects/cardiac_prediction/streamlit /opt/airflow/projects/cardiac_prediction/streamlit
+
+# Cài các thư viện cần thiết cho Streamlit và Spark
+USER airflow
+RUN pip install --no-cache-dir streamlit psycopg2-binary pandas pyspark scikit-learn

@@ -1,116 +1,127 @@
 import streamlit as st
-import json
-import os
+import pandas as pd
+import psycopg2
+import time
+import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
+# Cấu hình trang
 st.set_page_config(
-    page_title="Cardiac Admission Prediction Dashboard",
+    page_title="Cardiac Prediction Dashboard",
     page_icon="❤️",
     layout="wide"
 )
 
-# Title
-st.title("❤️ Cardiac Admission Outcome Prediction")
-st.markdown("Real-time ML prediction system for cardiac readmission risk")
+# Cấu hình Database
+DB_CONFIG = {
+    "dbname": "airflow",
+    "user": "airflow",
+    "password": "airflow",
+    "host": "postgres",
+    "port": "5432"
+}
 
-# Load model metrics
-metrics_path = "/opt/airflow/projects/cardiac_prediction/models/cardiac_rf_model_metrics.json"
+def get_db_connection():
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        st.error(f"Error connecting to database: {e}")
+        return None
 
-if os.path.exists(metrics_path):
-    with open(metrics_path, 'r') as f:
-        metrics = json.load(f)
-    
-    # Display metrics in columns
-    st.header("📊 Model Performance Metrics")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("AUC-ROC", f"{metrics.get('AUC-ROC', 0):.4f}")
-        st.metric("F1 Score", f"{metrics.get('F1', 0):.4f}")
-    
-    with col2:
-        st.metric("Precision", f"{metrics.get('Precision', 0):.4f}")
-        st.metric("Recall", f"{metrics.get('Recall', 0):.4f}")
-    
-    with col3:
-        st.metric("Accuracy", f"{metrics.get('Accuracy', 0):.4f}")
-        st.metric("AUC-PR", f"{metrics.get('AUC-PR', 0):.4f}")
-    
-    st.success("✅ Model loaded successfully")
-else:
-    st.error("❌ Model metrics not found. Please train the model first.")
+def load_data():
+    conn = get_db_connection()
+    if conn:
+        query = "SELECT * FROM cardiac_predictions ORDER BY prediction_time DESC LIMIT 100"
+        df = pd.read_sql(query, conn)
+        conn.close()
+        return df
+    return pd.DataFrame()
 
-# System Status
-st.header("🔧 System Status")
+def load_model_metrics():
+    conn = get_db_connection()
+    if conn:
+        query = "SELECT * FROM model_performance_summary LIMIT 1"
+        df = pd.read_sql(query, conn)
+        conn.close()
+        if not df.empty:
+            return df.iloc[0]
+    return None
 
-col1, col2, col3 = st.columns(3)
+# Header
+st.title("❤️ Real-time Cardiac Admission Prediction")
+st.markdown("Monitoring real-time patient data and prediction results.")
+
+# Auto-refresh logic
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = time.time()
+
+if time.time() - st.session_state.last_refresh > 5:
+    st.rerun()
+    st.session_state.last_refresh = time.time()
+
+# Load Data
+df = load_data()
+metrics = load_model_metrics()
+
+# Metrics Section
+st.header("📊 System Performance")
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown("**Kafka Status**")
-    st.success("🟢 Running")
+    total_predictions = len(df) if not df.empty else 0
+    st.metric("Recent Predictions", total_predictions)
 
 with col2:
-    st.markdown("**Spark Streaming**")
-    st.info("🔵 Ready")
+    if not df.empty:
+        positive_rate = (df['result_class'].sum() / total_predictions) * 100
+        st.metric("High Risk Rate", f"{positive_rate:.1f}%")
+    else:
+        st.metric("High Risk Rate", "N/A")
 
 with col3:
-    st.markdown("**Model Version**")
-    st.info(f"v{datetime.now().strftime('%Y%m%d')}")
+    if metrics is not None:
+        st.metric("Current Model Accuracy", f"{float(metrics['accuracy']):.4f}")
+    else:
+        st.metric("Current Model Accuracy", "N/A")
 
-# Dataset Info
-st.header("📁 Dataset Information")
+with col4:
+    if metrics is not None:
+        st.metric("Model Version", "v1") # Placeholder or from DB
+    else:
+        st.metric("Model Version", "N/A")
 
-metadata_path = "/opt/airflow/projects/cardiac_prediction/data/metadata.json"
-if os.path.exists(metadata_path):
-    with open(metadata_path, 'r') as f:
-        metadata = json.load(f)
+# Charts Section
+if not df.empty:
+    st.header("📈 Real-time Analysis")
     
-    col1, col2, col3 = st.columns(3)
+    c1, c2 = st.columns(2)
     
-    with col1:
-        st.metric("Total Records", f"{metadata.get('total_records', 0):,}")
-    
-    with col2:
-        st.metric("Class 0 (Normal)", f"{metadata.get('class_0_count', 0):,}")
-    
-    with col3:
-        st.metric("Class 1 (High Risk)", f"{metadata.get('class_1_count', 0):,}")
-    
-    # Class distribution
-    st.markdown(f"**Class Imbalance Ratio:** {metadata.get('class_weight', 0):.2f}:1")
-    
-    # Feature info
-    st.markdown("**Features:**")
-    st.markdown(f"- Continuous: {len(metadata.get('continuous_features', []))}")
-    st.markdown(f"- Binary: {len(metadata.get('binary_features', []))}")
+    with c1:
+        # Pie chart for Risk Distribution
+        risk_counts = df['result_class'].value_counts()
+        fig_pie = px.pie(values=risk_counts.values, names=['Normal', 'High Risk'], title="Risk Distribution (Last 100)")
+        st.plotly_chart(fig_pie, use_container_width=True)
+        
+    with c2:
+        # Scatter plot Age vs Heart Rate
+        fig_scatter = px.scatter(df, x="age", y="heart_rate", color="result_class", 
+                                 title="Age vs Heart Rate Correlation",
+                                 labels={"result_class": "Risk Level"})
+        st.plotly_chart(fig_scatter, use_container_width=True)
 
-# Instructions
-st.header("🚀 Quick Start Guide")
+    # Recent Data Table
+    st.header("📋 Recent Predictions Log")
+    # Display columns matching new schema
+    display_cols = ['prediction_time', 'age', 'sex', 'heart_rate', 'bp_sys', 'bp_dia', 'spo2', 'result_class']
+    # Filter columns that actually exist in df
+    valid_cols = [c for c in display_cols if c in df.columns]
+    st.dataframe(df[valid_cols].head(10))
 
-st.markdown("""
-### Run the streaming pipeline:
-
-1. **Start Producer & Consumer:**
-   ```bash
-   docker exec -it airflow-airflow-worker-1 bash
-   bash /opt/airflow/projects/cardiac_prediction/scripts/run_streaming.sh
-   ```
-
-2. **Trigger Airflow DAG:**
-   - Go to Airflow UI: http://localhost:8080
-   - Enable and trigger `cardiac_streaming_lifecycle`
-
-3. **Retrain Model (Daily):**
-   - DAG: `cardiac_model_retraining` runs daily automatically
-   - Manual trigger available in Airflow UI
-
-### Project Structure:
-- **Data:** `/projects/cardiac_prediction/data/`
-- **Model:** `/projects/cardiac_prediction/models/cardiac_rf_model/`
-- **Scripts:** `/projects/cardiac_prediction/scripts/`
-""")
+else:
+    st.info("Waiting for data stream...")
 
 # Footer
 st.markdown("---")
-st.markdown("**Cardiac Admission Outcome Prediction** | Built with PySpark, Kafka, Airflow & Streamlit")
+st.markdown(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
