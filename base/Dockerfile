@@ -3,7 +3,7 @@ FROM apache/airflow:2.9.0
 USER root
 
 # Cài Java (cho Spark)
-RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jre-headless \
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jre-headless libgl1 libglib2.0-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64

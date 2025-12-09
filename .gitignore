@@ -48,3 +48,5 @@ Thumbs.db
 # Temp files
 *.tmp
 /tmp/
+
+projects/realtime-traffic-monitoring/images

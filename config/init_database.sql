@@ -86,3 +86,39 @@ CREATE TRIGGER update_model_registry_updated_at
 COMMENT ON TABLE cardiac_predictions IS 'Stores cardiac admission predictions from streaming pipeline';
 COMMENT ON TABLE model_registry IS 'Registry of all trained models with metrics and production status';
 COMMENT ON TABLE training_history IS 'Complete history of all training runs';
+
+-- -- 5. Bảng lưu thông tin camera
+-- CREATE TABLE IF NOT EXISTS cameras (
+--     camera_id VARCHAR(255) PRIMARY KEY,
+--     name VARCHAR(255) NOT NULL
+-- );
+
+-- -- 6. Bảng lưu khung hình camera
+-- CREATE TABLE IF NOT EXISTS camera_frames (
+--     frame_id SERIAL PRIMARY KEY,
+--     camera_id VARCHAR(255) REFERENCES cameras(camera_id),
+--     timestamp TIMESTAMP NOT NULL,
+--     image_path TEXT NOT NULL
+-- );
+
+-- -- 7. Bảng lưu vi phạm giao thông
+-- CREATE TABLE IF NOT EXISTS traffic_violations (
+--     violation_id SERIAL PRIMARY KEY,
+--     camera_id VARCHAR(255) REFERENCES cameras(camera_id),
+--     timestamp TIMESTAMP NOT NULL,
+--     violation_type VARCHAR(100) NOT NULL,
+--     vehicle_type VARCHAR(50),
+--     confidence FLOAT,
+--     image_path TEXT,
+--     details JSONB
+-- );
+
+-- -- 8. View tổng hợp vi phạm
+-- CREATE OR REPLACE VIEW traffic_violations_summary AS
+-- SELECT
+--     camera_id,
+--     DATE_TRUNC('day', timestamp) AS day,
+--     violation_type,
+--     COUNT(*) AS count
+-- FROM traffic_violations
+-- GROUP BY camera_id, day, violation_type;

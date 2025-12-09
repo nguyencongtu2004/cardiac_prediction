@@ -1,0 +1,92 @@
+{
+    "pasteur_le_duan": {
+        "stop_line": [
+            [
+                100,
+                300
+            ],
+            [
+                500,
+                300
+            ]
+        ],
+        "traffic_light_roi": [
+            400,
+            50,
+            450,
+            100
+        ],
+        "no_parking_zone": [
+            [
+                0,
+                300
+            ],
+            [
+                100,
+                300
+            ],
+            [
+                100,
+                400
+            ],
+            [
+                0,
+                400
+            ]
+        ]
+    },
+    "nguyen_thi_minh_khai": {
+        "stop_line": [
+            [
+                80,
+                280
+            ],
+            [
+                480,
+                280
+            ]
+        ],
+        "traffic_light_roi": [
+            420,
+            40,
+            470,
+            90
+        ]
+    },
+    "hai_ba_trung": {
+        "stop_line": [
+            [
+                100,
+                290
+            ],
+            [
+                500,
+                290
+            ]
+        ],
+        "traffic_light_roi": [
+            380,
+            50,
+            430,
+            100
+        ]
+    },
+    "nam_ky_khoi_nghia": {
+        "stop_line": [
+            [
+                90,
+                300
+            ],
+            [
+                490,
+                300
+            ]
+        ],
+        "traffic_light_roi": [
+            400,
+            45,
+            450,
+            95
+        ]
+    }
+}
