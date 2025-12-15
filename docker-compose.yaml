@@ -2,7 +2,7 @@ x-airflow-common:
   &airflow-common
   build:
     context: ./
-    dockerfile: base/Dockerfile
+    dockerfile: docker/base/Dockerfile
   image: airflow-base:2.9.0-custom
   environment:
     &airflow-common-env
@@ -18,13 +18,10 @@ x-airflow-common:
     TZ: Asia/Ho_Chi_Minh
     AIRFLOW__CORE__DEFAULT_TIMEZONE: Asia/Ho_Chi_Minh
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ${AIRFLOW_PROJ_DIR:-.}/models:/opt/airflow/models
-    - ${AIRFLOW_PROJ_DIR:-.}/projects/cardiac_prediction:/opt/airflow/projects/cardiac_prediction
-    - ${AIRFLOW_PROJ_DIR:-.}/projects/realtime-traffic-monitoring:/opt/airflow/projects/realtime-traffic-monitoring
+    - ${AIRFLOW_PROJ_DIR:-.}:/opt/airflow/projects/realtime-traffic-monitoring
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -42,8 +39,8 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
-      - ./config/init_database.sql:/docker-entrypoint-initdb.d/01_init_database.sql
-      - ./config/init_traffic_monitoring.sql:/docker-entrypoint-initdb.d/02_init_traffic_monitoring.sql
+      - ./airflow/config/init_database.sql:/docker-entrypoint-initdb.d/01_init_database.sql
+      - ./airflow/config/init_traffic_monitoring.sql:/docker-entrypoint-initdb.d/02_init_traffic_monitoring.sql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
@@ -181,28 +178,6 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
-  streamlit-cardiac:
-    image: airflow-base:2.9.0-custom
-    container_name: streamlit-cardiac
-    entrypoint: ["bash", "-c", "streamlit run /opt/airflow/projects/realtime-traffic-monitoring/dashboard.py --server.port 8501 --server.address 0.0.0.0"]
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-    ports:
-      - "8501:8501"
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/projects/cardiac_prediction:/opt/airflow/projects/cardiac_prediction
-      - ${AIRFLOW_PROJ_DIR:-.}/projects/realtime-traffic-monitoring:/opt/airflow/projects/realtime-traffic-monitoring
-      - ${AIRFLOW_PROJ_DIR:-.}/models:/opt/airflow/models
-    depends_on:
-      airflow-webserver:
-        condition: service_healthy
-      airflow-scheduler:
-        condition: service_healthy
-      airflow-worker:
-        condition: service_healthy
-      airflow-triggerer:
-        condition: service_healthy
-
   zookeeper:
     image: zookeeper:3.8
     container_name: zookeeper
@@ -228,44 +203,53 @@ services:
 
   traffic-monitoring-producer:
     build:
-      context: ./projects/realtime-traffic-monitoring
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: docker/Dockerfile
     container_name: traffic-monitoring-producer
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/projects/realtime-traffic-monitoring:/opt/airflow/projects/realtime-traffic-monitoring
+      - ./:/app
     depends_on:
       - kafka
     restart: unless-stopped
-    command: python kafka_producer.py
+    command: python pipeline/producers/kafka_producer.py
 
   traffic-backend:
     build:
-      context: ./projects/realtime-traffic-monitoring/backend
+      context: ./apps/backend
       dockerfile: Dockerfile
     container_name: traffic-backend
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     ports:
       - "8000:8000"
+    volumes:
+      - ./apps/backend:/app
     depends_on:
       - kafka
       - postgres
     restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   traffic-frontend:
     build:
-      context: ./projects/realtime-traffic-monitoring/frontend
+      context: ./apps/frontend
       dockerfile: Dockerfile
+      target: dev
     container_name: traffic-frontend
     ports:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
     depends_on:
       - traffic-backend
     restart: unless-stopped
+    command: npm run dev
 
 volumes:
   postgres-db-volume:
+

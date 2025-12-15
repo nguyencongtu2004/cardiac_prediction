@@ -147,7 +147,7 @@ start_producer = BashOperator(
     cd {PROJECT_DIR}
     
     # Run producer for 5 minutes (for demo, adjust as needed)
-    timeout 300 python kafka_producer.py || true
+    timeout 300 python pipeline/producers/kafka_producer.py || true
     
     echo "✓ Producer task completed"
     """,
@@ -161,15 +161,18 @@ start_spark_processor = BashOperator(
     echo "Starting Spark Streaming for violation detection..."
     cd {PROJECT_DIR}
     
+    # Ensure core logic is available (either via PYTHONPATH or py-files)
+    export PYTHONPATH=$PYTHONPATH:{PROJECT_DIR}
+
     # Run Spark processor
     timeout 300 spark-submit \
       --master local[*] \
       --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
-      --py-files traffic_logic.py \
+      --py-files core/traffic_logic.py \
       --conf spark.sql.streaming.checkpointLocation=/tmp/spark_checkpoint \
       --conf spark.driver.memory=2g \
       --conf spark.executor.memory=2g \
-      spark_processor.py || true
+      pipeline/processors/spark_processor.py || true
     
     echo "✓ Spark Streaming task completed"
     """,
@@ -184,7 +187,7 @@ start_db_consumer = BashOperator(
     cd {PROJECT_DIR}
     
     # Run consumer for 5 minutes
-    timeout 300 python db_consumer.py || true
+    timeout 300 python pipeline/consumers/db_consumer.py || true
     
     echo "✓ DB Consumer task completed"
     """,

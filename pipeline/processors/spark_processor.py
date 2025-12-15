@@ -7,10 +7,16 @@ import sys
 
 # Ensure local modules can be imported
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Also add parent directory to find core if needed when running locally
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../")) 
+
 try:
-    import traffic_logic
+    from core import traffic_logic
 except ImportError:
-    pass
+    try:
+        import traffic_logic # Fallback if passed via --py-files directly in root
+    except ImportError:
+        pass
 
 # ==========================
 # CẤU HÌNH
