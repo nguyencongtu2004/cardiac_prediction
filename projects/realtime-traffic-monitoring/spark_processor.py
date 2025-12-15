@@ -3,6 +3,14 @@ from pyspark.sql.functions import from_json, col, udf, struct, to_json
 from pyspark.sql.types import StructType, StructField, StringType, ArrayType, FloatType, IntegerType
 import json
 import os
+import sys
+
+# Ensure local modules can be imported
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+try:
+    import traffic_logic
+except ImportError:
+    pass
 
 # ==========================
 # CẤU HÌNH
@@ -46,7 +54,8 @@ detection_schema = ArrayType(StructType([
     StructField("class_name", StringType(), True),
     StructField("confidence", FloatType(), True),
     StructField("bbox", ArrayType(FloatType()), True),  # [x1, y1, x2, y2]
-    StructField("center", ArrayType(FloatType()), True)  # [cx, cy]
+    StructField("center", ArrayType(FloatType()), True),  # [cx, cy]
+    StructField("state", StringType(), True) # ADDED: Traffic Light State (RED/GREEN/etc)
 ]))
 
 # ==========================
@@ -56,7 +65,14 @@ def create_yolo_detector():
     """Factory function để tạo YOLO detector (lazy loading)"""
     from ultralytics import YOLO
     import cv2
+    import numpy as np
     
+    # Import logic locally if needed (for worker nodes)
+    try:
+        import traffic_logic
+    except ImportError:
+        pass # Handle if not found or packaged differently
+
     model = YOLO('yolov8n.pt')
     target_classes = [2, 3, 5, 7, 9]  # car, motorcycle, bus, truck, traffic light
     
@@ -81,12 +97,33 @@ def create_yolo_detector():
                     cx = (x1 + x2) / 2
                     cy = (y1 + y2) / 2
                     
+                    class_name = model.names[cls_id]
+                    state = "UNKNOWN"
+
+                    # Nếu là đèn giao thông, detect màu
+                    if class_name == 'traffic light':
+                        # Crop image
+                        h, w = frame.shape[:2]
+                        cx1, cy1, cx2, cy2 = int(x1), int(y1), int(x2), int(y2)
+                        cx1, cx2 = max(0, cx1), min(w, cx2)
+                        cy1, cy2 = max(0, cy1), min(h, cy2)
+                        
+                        crop = frame[cy1:cy2, cx1:cx2]
+                        if 'traffic_logic' in locals() or 'traffic_logic' in globals():
+                             state = traffic_logic.detect_traffic_light_color(crop)
+                        else:
+                             # Fallback internal logic if import fails on worker
+                             # For now, duplicate logic or assume 'UNKNOWN'
+                             # Ideally traffic_logic.py is distributed with --py-files
+                             pass 
+
                     detections.append({
                         "class_id": cls_id,
-                        "class_name": model.names[cls_id],
+                        "class_name": class_name,
                         "confidence": conf,
                         "bbox": [x1, y1, x2, y2],
-                        "center": [cx, cy]
+                        "center": [cx, cy],
+                        "state": state
                     })
             
             return detections
@@ -104,8 +141,11 @@ detect_objects_udf = udf(create_yolo_detector(), detection_schema)
 # ==========================
 def load_roi_config():
     """Load ROI configuration"""
-    with open(ROI_CONFIG_PATH, 'r') as f:
-        return json.load(f)
+    try:
+        with open(ROI_CONFIG_PATH, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 def check_violations(camera_id, detections_json):
     """Kiểm tra vi phạm dựa trên detections"""
@@ -125,21 +165,41 @@ def check_violations(camera_id, detections_json):
         # Giả sử stop line nằm ngang, y = stop_y
         stop_y = stop_line[0][1]
         
-        # Tìm traffic light
+        # -- UPDATED LOGIC --
+        # 1. Determine Global Traffic Light State
+        # Ưu tiên lấy state từ detection đèn giao thông
         traffic_lights = [d for d in detections if d['class_name'] == 'traffic light']
+        
+        current_state = 'UNKNOWN'
+        # Simple Logic: If ANY light is RED, consider it Red. If ANY Green, Green.
+        # Priority: Red > Green > Yellow
+        states = [d.get('state', 'UNKNOWN') for d in traffic_lights]
+        if 'RED' in states:
+            current_state = 'RED'
+        elif 'GREEN' in states:
+            current_state = 'GREEN'
+        elif 'YELLOW' in states:
+            current_state = 'YELLOW'
+            
+        # Nếu không phải RED, không bắt lỗi.
+        if current_state != 'RED':
+             return json.dumps([])
+
         vehicles = [d for d in detections if d['class_name'] in ['car', 'motorcycle', 'bus', 'truck']]
         
         # Simplified logic: Nếu có xe vượt qua stop line (center_y > stop_y)
         for vehicle in vehicles:
-            cx, cy = vehicle['center']
+            cx, cy = vehicle['center'][0], vehicle['center'][1] # Array returned by UDF
             
             # Kiểm tra xe có vượt stop line không
+            # Note: Cần cẩn thận logic vượt (center đã qua dòng)
             if cy > stop_y:
                 violations.append({
                     "type": "stop_line_crossing",
                     "vehicle": vehicle['class_name'],
                     "confidence": vehicle['confidence'],
-                    "position": vehicle['center']
+                    "position": vehicle['center'],
+                    "traffic_light_state": current_state
                 })
         
         return json.dumps(violations)

@@ -165,6 +165,7 @@ start_spark_processor = BashOperator(
     timeout 300 spark-submit \
       --master local[*] \
       --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
+      --py-files traffic_logic.py \
       --conf spark.sql.streaming.checkpointLocation=/tmp/spark_checkpoint \
       --conf spark.driver.memory=2g \
       --conf spark.executor.memory=2g \

@@ -50,3 +50,4 @@ Thumbs.db
 /tmp/
 
 projects/realtime-traffic-monitoring/images
+projects/realtime-traffic-monitoring/inference_results

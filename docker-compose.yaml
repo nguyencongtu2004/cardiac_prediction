@@ -240,5 +240,32 @@ services:
     restart: unless-stopped
     command: python kafka_producer.py
 
+  traffic-backend:
+    build:
+      context: ./projects/realtime-traffic-monitoring/backend
+      dockerfile: Dockerfile
+    container_name: traffic-backend
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8000:8000"
+    depends_on:
+      - kafka
+      - postgres
+    restart: unless-stopped
+
+  traffic-frontend:
+    build:
+      context: ./projects/realtime-traffic-monitoring/frontend
+      dockerfile: Dockerfile
+    container_name: traffic-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - traffic-backend
+    restart: unless-stopped
+
 volumes:
   postgres-db-volume:

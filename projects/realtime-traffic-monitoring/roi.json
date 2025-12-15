@@ -2,19 +2,19 @@
     "pasteur_le_duan": {
         "stop_line": [
             [
-                100,
-                300
+                371,
+                137
             ],
             [
-                500,
-                300
+                444,
+                147
             ]
         ],
         "traffic_light_roi": [
-            400,
-            50,
+            428,
+            90,
             450,
-            100
+            104
         ],
         "no_parking_zone": [
             [
