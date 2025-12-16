@@ -55,16 +55,30 @@ def detect_traffic_light_color(image_crop):
     
     return 'UNKNOWN'
 
-def check_stop_line_violation(vehicle_center, stop_y):
+def check_stop_line_violation(vehicle_center, stop_line):
     """
     Checks if a vehicle has crossed the stop line.
     Assumption: Camera view is such that vehicles move from top to bottom (y increases).
     """
-    # Assuming standard view: top of image is y=0. Stop line is at y=stop_y.
-    # If vehicle moves down detected below the line, it crossed it.
-    # Logic needs to be robust. 
-    # For now, simplistic check: Is center_y > stop_y?
-    _, cy = vehicle_center
+    cx, cy = vehicle_center
+    
+    if not stop_line:
+        return False
+
+    # 1. Check X-Range (Lane check)
+    # Only consider vehicles horizontally within the stop line segment
+    xs = [p[0] for p in stop_line]
+    min_x = min(xs)
+    max_x = max(xs)
+    
+    if not (min_x <= cx <= max_x):
+        return False
+
+    # 2. Check Y-Threshold (Crossing check)
+    # Using average Y for horizontal approximation
+    ys = [p[1] for p in stop_line]
+    stop_y = sum(ys) / len(ys)
+
     return cy > stop_y
 
 def process_violations(detections, roi_config, image_shape=None, frame=None):
@@ -134,7 +148,7 @@ def process_violations(detections, roi_config, image_shape=None, frame=None):
     vehicles = [d for d in detections if d['class_name'] in ['car', 'motorcycle', 'bus', 'truck']]
     
     for vehicle in vehicles:
-        if check_stop_line_violation(vehicle['center'], stop_y):
+        if check_stop_line_violation(vehicle['center'], stop_line):
             violations.append({
                 "type": "stop_line_crossing",
                 "vehicle": vehicle['class_name'],

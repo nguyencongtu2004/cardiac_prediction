@@ -1,8 +1,8 @@
 import cv2
 import json
 
-IMG_PATH = r"C:\Users\LENOVO\Desktop\cardiac_prediction\projects\realtime-traffic-monitoring\images\pasteur_le_duan\pasteur_le_duan_20251209_064024.jpg"          # ảnh mẫu
-ROI_JSON = r"C:\Users\LENOVO\Desktop\cardiac_prediction\projects\realtime-traffic-monitoring\test_roi.json"                  # file sẽ lưu
+IMG_PATH = r"C:\Users\LENOVO\Desktop\cardiac_prediction\images\hai_thuong_lan_ong_chau_van_liem\hai_thuong_lan_ong_chau_van_liem_20251216_142219.jpg"          # ảnh mẫu
+ROI_JSON = r"C:\Users\LENOVO\Desktop\cardiac_prediction\test_roi.json"                  # file sẽ lưu
 
 img = cv2.imread(IMG_PATH)
 h, w = img.shape[:2]
