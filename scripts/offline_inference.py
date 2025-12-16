@@ -5,20 +5,21 @@ import glob
 from ultralytics import YOLO
 import numpy as np
 try:
-    import traffic_logic
+    from core import traffic_logic
 except ImportError:
     # Handle case where script is run from a different directory
     import sys
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    import traffic_logic
+    # Add project root to sys.path (parent of scripts/)
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core import traffic_logic
 
 # ==========================
 # CẤU HÌNH
 # ==========================
-MODEL_PATH = "yolov8n.pt"  # Tự động tải nếu chưa có
-IMAGE_DIR = r".\images\pasteur_le_duan"  # Folder chứa ảnh tải về
-ROI_CONFIG_PATH = "roi.json"
-OUTPUT_DIR = "inference_results"
+MODEL_PATH = "../config/yolo/yolov8n.pt"  # Tự động tải nếu chưa có
+IMAGE_DIR = r"../images/pasteur_le_duan"  # Folder chứa ảnh tải về
+ROI_CONFIG_PATH = "../config/roi.json"
+OUTPUT_DIR = "../inference_results"
 
 # Load Config
 if os.path.exists(ROI_CONFIG_PATH):
@@ -77,7 +78,8 @@ def run_inference():
 
     print(f"Tìm thấy {len(image_paths)} ảnh. Bắt đầu xử lý...")
 
-    for img_path in image_paths[:10]: # Test 10 ảnh đầu tiên
+    # for img_path in image_paths[:10]: # Test 10 ảnh đầu tiên
+    for img_path in image_paths:
         filename = os.path.basename(img_path)
         print(f"Processing {filename}...")
         
