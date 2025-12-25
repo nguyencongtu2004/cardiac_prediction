@@ -15,12 +15,15 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # Secret key for secure session - must be same across all components
+    AIRFLOW__WEBSERVER__SECRET_KEY: 'helmet_violation_detection_secret_key_2025'
     TZ: Asia/Ho_Chi_Minh
     AIRFLOW__CORE__DEFAULT_TIMEZONE: Asia/Ho_Chi_Minh
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/airflow/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}:/opt/airflow/projects/realtime-traffic-monitoring
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
@@ -39,8 +42,10 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./airflow/config/00_create_databases.sql:/docker-entrypoint-initdb.d/00_create_databases.sql
       - ./airflow/config/init_database.sql:/docker-entrypoint-initdb.d/01_init_database.sql
       - ./airflow/config/init_traffic_monitoring.sql:/docker-entrypoint-initdb.d/02_init_traffic_monitoring.sql
+      - ./airflow/config/init_helmet_violations.sql:/docker-entrypoint-initdb.d/03_init_helmet_violations.sql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
@@ -201,20 +206,6 @@ services:
       - zookeeper
     restart: always
 
-  traffic-monitoring-producer:
-    build:
-      context: ./
-      dockerfile: docker/Dockerfile
-    container_name: traffic-monitoring-producer
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-    volumes:
-      - ./:/app
-    depends_on:
-      - kafka
-    restart: unless-stopped
-    command: python pipeline/producers/kafka_producer.py
-
   traffic-backend:
     build:
       context: ./apps/backend
@@ -222,10 +213,19 @@ services:
     container_name: traffic-backend
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: traffic_monitoring
+      DB_USER: airflow
+      DB_PASSWORD: airflow
+      VIOLATIONS_DIR: /app/violations
+      VIDEO_DIR: /app/data/video
     ports:
       - "8000:8000"
     volumes:
       - ./apps/backend:/app
+      - ./violations:/app/violations
+      - ./data/video:/app/data/video
     depends_on:
       - kafka
       - postgres
@@ -239,7 +239,7 @@ services:
       target: dev
     container_name: traffic-frontend
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
     volumes:
