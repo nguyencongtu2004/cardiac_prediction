@@ -5,12 +5,27 @@
 Ensure you have:
 
 - ✅ Docker and Docker Compose installed
-- ✅ Video file: `data/video/bike-test.mp4`
+- ✅ Video files in `data/video/` directory (e.g., `bike-test.mp4`)
 - ✅ YOLO models in `models/` directory:
   - `yolov3-helmet.cfg`
   - `yolov3-helmet.weights`
   - `helmet.names`
   - `yolov8n.pt`
+
+## 🏗️ Architecture Overview
+
+```mermaid
+graph LR
+    A[Video Files] --> B[Video Producer]
+    B --> C[Kafka: helmet_video_frames]
+    C --> D[Helmet Detector]
+    C --> E[Backend API]
+    D --> F[Kafka: helmet_violations]
+    F --> G[Backend API]
+    G --> H[PostgreSQL]
+    E --> I[Frontend Dashboard]
+    G --> I
+```
 
 ## 🚀 Quick Start (3 Steps)
 
@@ -23,37 +38,55 @@ docker-compose up -d
 
 This will start:
 
-- ✅ Kafka & Zookeeper
-- ✅ PostgreSQL database
-- ✅ Video producer (streaming at 7 FPS)
-- ✅ Helmet detector consumer
-- ✅ Backend API
-- ✅ Frontend dashboard
+- ✅ Kafka & Zookeeper (Message Queue)
+- ✅ PostgreSQL (Database)
+- ✅ Airflow (Workflow Orchestration)
+- ✅ Backend API (FastAPI + WebSocket)
+- ✅ Frontend Dashboard (Next.js)
 
-### Step 2: Wait for Services to Initialize
+### Step 2: Access Airflow & Trigger DAG
 
-```bash
-# Check service status
-docker-compose ps
+Open Airflow UI: **http://localhost:8080**
 
-# All services should show "Up" or "healthy"
-```
+Credentials: `airflow` / `airflow`
 
-Wait for ~30 seconds for all services to be ready.
+1. Navigate to DAGs page
+2. Find `helmet_demo_streaming` DAG
+3. Enable the DAG (toggle switch)
+4. Click the play button (▶️) to trigger
+
+This DAG will:
+
+- Stream all videos from `data/video/` in parallel
+- Run helmet detection on frames
+- Save violations to database
+- Stream live video to dashboard
 
 ### Step 3: Open the Dashboard
 
-Open your browser and navigate to:
-
-```
-http://localhost:3000
-```
+Open your browser and navigate to: **http://localhost:3002**
 
 You should see:
 
-- Real-time connection status (green ● Kết nối)
-- Statistics dashboard
-- Live violation updates
+- 📊 Statistics dashboard (total violations, today, last hour)
+- 📁 Available video sources list
+- 📹 Live camera view with multi-camera selection
+- 🚫 Real-time violation updates
+
+## 📁 Adding Video Sources
+
+Place video files in `data/video/`:
+
+```
+data/video/
+├── bike-test.mp4        → Camera ID: "bike-test"
+├── 7356097829858.mp4    → Camera ID: "7356097829858"
+└── street-cam.avi       → Camera ID: "street-cam"
+```
+
+Supported formats: `.mp4`, `.avi`, `.mkv`, `.mov`
+
+The system will automatically detect and stream all videos in parallel.
 
 ## 🔍 Monitoring
 
@@ -64,16 +97,15 @@ You should see:
 docker-compose logs -f
 
 # Specific services
-docker-compose logs -f helmet-video-producer
-docker-compose logs -f helmet-detector-consumer
 docker-compose logs -f traffic-backend
+docker-compose logs -f airflow-worker
 ```
 
 ### Check Database
 
 ```bash
 # Connect to PostgreSQL
-docker exec -it postgres psql -U airflow -d traffic_monitoring
+docker exec -it cardiac_prediction-postgres-1 psql -U airflow -d traffic_monitoring
 
 # Query violations
 SELECT COUNT(*) FROM helmet_violations;
@@ -86,9 +118,34 @@ SELECT * FROM helmet_violations ORDER BY timestamp DESC LIMIT 5;
 # Get statistics
 curl http://localhost:8000/api/stats
 
-# Get latest violations
-curl http://localhost:8000/api/violations/latest
+# Get violations
+curl http://localhost:8000/api/violations?limit=10
+
+# Get available videos
+curl http://localhost:8000/api/videos
+
+# Get active cameras
+curl http://localhost:8000/api/cameras
 ```
+
+## 🎯 Key URLs
+
+| Service         | URL                        | Description             |
+| --------------- | -------------------------- | ----------------------- |
+| **Dashboard**   | http://localhost:3002      | Real-time monitoring UI |
+| **Backend API** | http://localhost:8000      | REST API & WebSocket    |
+| **API Docs**    | http://localhost:8000/docs | FastAPI Swagger UI      |
+| **Airflow**     | http://localhost:8080      | DAG management          |
+| **Kafka**       | localhost:9092             | Message broker          |
+| **PostgreSQL**  | localhost:5432             | Database                |
+
+## 📊 Available DAGs
+
+| DAG Name                           | Description                                                |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `helmet_demo_streaming`            | **Demo DAG** - Producer & Detector run in parallel         |
+| `helmet_violation_pipeline`        | **Full pipeline** - Sequential workflow with health checks |
+| `traffic_monitoring_full_pipeline` | Traffic violation detection (YOLO + Spark)                 |
 
 ## 🛑 Stop the System
 
@@ -100,73 +157,36 @@ docker-compose down
 docker-compose down -v
 ```
 
-## ⚡ Quick Testing
-
-### Test Only Detection (Without Docker)
-
-If you just want to test the detection on the video file:
-
-```bash
-# Install dependencies
-pip install opencv-python numpy ultralytics kafka-python
-
-# Run detector consumer (requires Kafka running)
-python pipeline/consumers/helmet_detector_consumer.py
-```
-
-## 🎯 Key URLs
-
-- **Dashboard**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs (FastAPI automatic docs)
-- **Kafka**: localhost:9092
-- **PostgreSQL**: localhost:5432
-
-## 📊 Expected Behavior
-
-1. **Video Producer**: Streams frames at ~7 FPS
-
-   - Check logs for: `[Frame XXXXXX] Sent #XXX | FPS: 7.XX`
-
-2. **Detector**: Processes frames and detects violations
-
-   - Check logs for: `[Frame XXX] ⚠️ X violation(s) detected!`
-
-3. **Database**: Stores violations
-
-   - Check with: `SELECT COUNT(*) FROM helmet_violations;`
-
-4. **Dashboard**: Shows real-time updates
-   - New violations appear automatically
-   - Stats update every 10 seconds
-
 ## 🐛 Troubleshooting
 
 ### No violations detected?
 
-- Check if video file exists: `ls -la data/video/bike-test.mp4`
-- Check if models exist: `ls -la models/*.weights models/*.pt`
-- View detector logs: `docker-compose logs helmet-detector-consumer`
+- Check video files exist: `ls -la data/video/`
+- Check models exist: `ls -la models/*.weights models/*.pt`
+- View Airflow task logs in UI
 
 ### Dashboard not updating?
 
 - Check WebSocket connection status (should be green)
 - Check backend logs: `docker-compose logs traffic-backend`
-- Refresh the page
+- Ensure DAG is running in Airflow
 
-### Services not starting?
+### API returns empty video list?
 
-- Check ports are not in use: `netstat -an | grep -E '(3000|8000|9092|5432)'`
-- Check Docker resources (memory, CPU)
-- View service logs: `docker-compose logs`
+- Restart backend: `docker-compose restart traffic-backend`
+- Check volume mount in docker-compose.yaml
 
-## 💡 Tips
+## 💡 Configuration
 
-- **Performance**: Adjust `TARGET_FPS` in docker-compose.yaml (5-10 recommended)
-- **Loop Video**: Set `LOOP_VIDEO=true` for continuous testing
-- **Database**: Data persists in Docker volume `postgres-db-volume`
-- **Images**: Violation images saved in `./violations/` directory
+| Environment Variable | Default         | Description                   |
+| -------------------- | --------------- | ----------------------------- |
+| `TARGET_FPS`         | 7               | Streaming frame rate          |
+| `STREAM_DURATION`    | 120             | DAG stream duration (seconds) |
+| `VIDEO_DIR`          | /app/data/video | Video source directory        |
+| `LOOP_VIDEO`         | false           | Loop videos continuously      |
 
-## 📚 More Information
+## 📚 Documentation
 
-See [walkthrough.md](file:///C:/Users/LENOVO/.gemini/antigravity/brain/47e80830-6e41-4a51-a86e-2e6f07b8e17b/walkthrough.md) for complete documentation and verification steps.
+- [README.md](README.md) - Full project documentation
+- [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) - Development roadmap
+- [API Docs](http://localhost:8000/docs) - Interactive API documentation

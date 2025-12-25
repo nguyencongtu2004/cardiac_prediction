@@ -87,6 +87,39 @@ Xây dựng hệ thống tự động phát hiện các hành vi vi phạm giao 
 2.  **Deploy Edge**:
     - Đóng gói module Inference thành Docker Image riêng, tối ưu bằng TensorRT để chạy trên thiết bị biên (Jetson Nano) nếu cần.
 
+### Giai Đoạn 5: Helmet Violation Detection System ✅ (Đã hoàn thành)
+
+**Mục tiêu**: Phát hiện vi phạm không đội mũ bảo hiểm real-time qua video streaming.
+
+1.  **Multi-Video Parallel Streaming**:
+
+    - Quét tất cả video trong thư mục `data/video/`
+    - Stream song song nhiều video cùng lúc (mỗi video = 1 thread)
+    - Hỗ trợ định dạng: `.mp4`, `.avi`, `.mkv`, `.mov`
+
+2.  **Helmet Detection Pipeline**:
+
+    - **YOLOv3**: Phát hiện mũ bảo hiểm
+    - **YOLOv8**: Phát hiện người + xe máy
+    - **CentroidTracker**: Theo dõi object qua các frame
+    - **Violation Logic**: Person + Motorbike + No Helmet = Vi phạm
+
+3.  **Airflow DAGs**:
+
+    - `helmet_demo_streaming`: Demo DAG - Producer & Detector chạy song song
+    - `helmet_violation_pipeline`: Full pipeline với health checks
+
+4.  **Modular Backend**:
+
+    - Cấu trúc: `config.py`, `services/`, `routers/`
+    - API endpoints: `/api/videos`, `/api/cameras`, `/api/violations`
+    - WebSocket: `/ws` (violations), `/ws/camera` (live stream)
+
+5.  **Component-based Frontend**:
+    - `CameraViewer`: Multi-camera selection với thumbnails
+    - `VideoSourceList`: Hiển thị video có sẵn
+    - `StatsCard`, `ViolationCard`: Hiển thị thống kê và vi phạm
+
 ## 3. Kiến Trúc Hệ Thống (Technical Architecture)
 
 ```mermaid

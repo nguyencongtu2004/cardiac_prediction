@@ -64,38 +64,60 @@ graph TB
 ```
 cardiac_prediction/
 ├── apps/
-│   ├── backend/                 # FastAPI backend service
-│   │   ├── main.py             # WebSocket + REST API
+│   ├── backend/                    # FastAPI backend service
+│   │   ├── main.py                # WebSocket + REST API
+│   │   ├── config.py              # Centralized configuration
+│   │   ├── services/              # Business logic modules
+│   │   │   ├── database.py        # PostgreSQL operations
+│   │   │   └── video.py           # Video file operations
+│   │   ├── routers/               # API route handlers
+│   │   │   └── videos.py          # Video endpoints
 │   │   ├── Dockerfile
 │   │   └── requirements.txt
-│   └── frontend/               # Next.js frontend application
+│   └── frontend/                   # Next.js frontend application
 │       ├── src/
-│       │   └── app/
-│       │       ├── layout.tsx
-│       │       └── page.tsx    # Main dashboard
+│       │   ├── app/
+│       │   │   ├── page.tsx       # Main dashboard
+│       │   │   └── page.module.css
+│       │   ├── components/        # Reusable UI components
+│       │   │   ├── CameraViewer/  # Multi-camera live view
+│       │   │   ├── StatsCard/     # Statistics display
+│       │   │   ├── ViolationCard/ # Violation display
+│       │   │   └── VideoSourceList/ # Available videos
+│       │   └── types/             # TypeScript interfaces
 │       ├── Dockerfile
 │       └── package.json
 ├── pipeline/
 │   ├── producers/
-│   │   └── kafka_producer.py   # Camera feed ingestion
+│   │   ├── kafka_producer.py      # Camera feed ingestion
+│   │   └── video_producer.py      # Multi-video parallel streaming
 │   ├── processors/
-│   │   └── spark_processor.py  # Spark + YOLO detection
+│   │   └── spark_processor.py     # Spark + YOLO detection
 │   └── consumers/
-│       └── db_consumer.py      # PostgreSQL writer
+│       ├── db_consumer.py         # PostgreSQL writer
+│       └── helmet_detector_consumer.py  # Helmet violation detection
 ├── airflow/
 │   ├── dags/
-│   │   └── traffic_monitoring_dag.py
+│   │   ├── traffic_monitoring_dag.py    # Traffic violation DAG
+│   │   ├── helmet_violation_dag.py      # Helmet detection (sequential)
+│   │   └── helmet_demo_dag.py           # Helmet demo (parallel)
 │   └── config/
 │       ├── init_database.sql
-│       └── init_traffic_monitoring.sql
+│       ├── init_traffic_monitoring.sql
+│       └── init_helmet_violations.sql
+├── data/
+│   └── video/                     # Video source files
+├── models/                        # YOLO model files
+│   ├── yolov3-helmet.cfg
+│   ├── yolov3-helmet.weights
+│   └── yolov8n.pt
 ├── docker/
-│   ├── Dockerfile              # Producer image
+│   ├── Dockerfile                 # Producer image
 │   └── base/
-│       └── Dockerfile          # Airflow custom image
-├── config/
-│   ├── roi.json               # Camera ROI configurations
-│   └── cameras.json           # Camera metadata
-├── docker-compose.yaml        # Full stack orchestration
+│       └── Dockerfile             # Airflow custom image
+├── docker-compose.yaml            # Full stack orchestration
+├── QUICKSTART.md                  # Quick start guide
+├── PROJECT_ROADMAP.md             # Development roadmap
 └── README.md
 ```
 
