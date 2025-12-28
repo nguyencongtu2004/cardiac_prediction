@@ -1,0 +1,282 @@
+{
+  "_comment": "Add camera-specific configs here by camera_id, e.g. 'camera_01': {...}",
+  "default": {
+    "stop_line": {
+      "y": 657,
+      "tolerance": 30
+    },
+    "traffic_light_roi": {
+      "x1": 1022,
+      "y1": 388,
+      "x2": 1138,
+      "y2": 459
+    },
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "cam1": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 646,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 28,
+      "y1": 9,
+      "x2": 184,
+      "y2": 190
+    },
+    "detection_zone": [
+      [
+        466,
+        1018
+      ],
+      [
+        651,
+        456
+      ],
+      [
+        1020,
+        465
+      ],
+      [
+        1576,
+        1017
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "cam2": {
+    "frame_width": 1280,
+    "frame_height": 720,
+    "stop_line": {
+      "y": 513,
+      "tolerance": 30,
+      "violation_direction": "below"
+    },
+    "traffic_light_roi": {
+      "x1": 1042,
+      "y1": 582,
+      "x2": 1159,
+      "y2": 677
+    },
+    "detection_zone": [
+      [
+        229,
+        351
+      ],
+      [
+        10,
+        703
+      ],
+      [
+        965,
+        712
+      ],
+      [
+        753,
+        355
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "cam3": {
+    "frame_width": 1280,
+    "frame_height": 720,
+    "stop_line": {
+      "y": 397,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 483,
+      "y1": 193,
+      "x2": 552,
+      "y2": 284
+    },
+    "detection_zone": [
+      [
+        384,
+        715
+      ],
+      [
+        330,
+        333
+      ],
+      [
+        483,
+        336
+      ],
+      [
+        725,
+        717
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  }
+}

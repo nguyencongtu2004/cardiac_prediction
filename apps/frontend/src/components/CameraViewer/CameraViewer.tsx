@@ -111,7 +111,7 @@ export function CameraViewer({ apiUrl }: CameraViewerProps) {
           <div className={styles.placeholder}>
             <p>🎬 Đang chờ video stream...</p>
             <p className={styles.hint}>
-              Trigger DAG &quot;helmet_demo_streaming&quot; trong Airflow
+              Trigger DAG &quot;violation_demo_streaming&quot; trong Airflow
             </p>
           </div>
         )}

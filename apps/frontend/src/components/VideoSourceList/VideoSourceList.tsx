@@ -77,7 +77,7 @@ export function VideoSourceList({ apiUrl }: VideoSourceListProps) {
 
       <div className={styles.footer}>
         <p>
-          💡 Trigger DAG &quot;helmet_demo_streaming&quot; để stream tất cả
+          💡 Trigger DAG &quot;violation_demo_streaming&quot; để stream tất cả
           video
         </p>
       </div>

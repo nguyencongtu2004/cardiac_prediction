@@ -5,38 +5,43 @@
   border: 1px solid #334155;
   transition: transform 0.2s, box-shadow 0.2s;
   animation: slideIn 0.3s ease-out;
+  display: flex;
+  flex-direction: row;
+  height: 200px;
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateX(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
 .card:hover {
-  transform: translateY(-4px);
+  transform: translateX(-4px);
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
   border-color: #ef4444;
 }
 
 .image {
-  width: 100%;
-  height: 250px;
+  width: 250px;
+  height: 100%;
   background: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  border-right: 1px solid #334155;
 }
 
 .image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .noImage {
@@ -44,8 +49,24 @@
   font-size: 1rem;
 }
 
+.imageLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.imageLink:hover {
+  opacity: 0.85;
+}
+
 .details {
-  padding: 1.5rem;
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .header {
@@ -62,6 +83,24 @@
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+.badgeRedlight {
+  background: #f59e0b;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.cardRedlight {
+  border-color: #f59e0b;
+}
+
+.cardRedlight:hover {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
+  border-color: #f59e0b;
 }
 
 .camera {

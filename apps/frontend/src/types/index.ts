@@ -1,4 +1,4 @@
-// Types for helmet violation detection system
+// Types for traffic violation detection system
 
 export interface Violation {
   violation_id: string;
@@ -15,11 +15,17 @@ export interface Violation {
   };
   image_base64?: string;
   image_path?: string;
-  metadata: {
-    person_detected: boolean;
-    motorbike_detected: boolean;
-    helmet_detected: boolean;
+  // Red light violation specific fields
+  violation_type?: "HELMET" | "RED_LIGHT" | string;
+  vehicle_type?: string;
+  traffic_light_state?: "RED" | "GREEN" | "YELLOW" | "UNKNOWN" | string;
+  // Helmet violation metadata
+  metadata?: {
+    person_detected?: boolean;
+    motorbike_detected?: boolean;
+    helmet_detected?: boolean;
     num_helmets?: number;
+    stop_line_y?: number;
   };
 }
 

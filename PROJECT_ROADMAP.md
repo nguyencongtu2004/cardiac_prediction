@@ -106,7 +106,7 @@ Xây dựng hệ thống tự động phát hiện các hành vi vi phạm giao 
 
 3.  **Airflow DAGs**:
 
-    - `helmet_demo_streaming`: Demo DAG - Producer & Detector chạy song song
+    - `violation_demo_streaming`: Demo DAG - Producer + Helmet + RedLight chạy song song
     - `helmet_violation_pipeline`: Full pipeline với health checks
 
 4.  **Modular Backend**:
@@ -119,6 +119,41 @@ Xây dựng hệ thống tự động phát hiện các hành vi vi phạm giao 
     - `CameraViewer`: Multi-camera selection với thumbnails
     - `VideoSourceList`: Hiển thị video có sẵn
     - `StatsCard`, `ViolationCard`: Hiển thị thống kê và vi phạm
+
+### Giai Đoạn 6: Red Light Detection & Shared Modules ✅ (Đã hoàn thành)
+
+**Mục tiêu**: Phát hiện vi phạm vượt đèn đỏ và tổ chức code thành modules chia sẻ.
+
+1.  **Shared Detection Modules** (`pipeline/detectors/`):
+
+    - `base.py`: Utilities (box functions, drawing, config loading, scaling)
+    - `tracker.py`: CentroidTracker class dùng chung
+    - `redlight_detector.py`: Logic phát hiện đèn đỏ + vi phạm
+    - `helmet_detector.py`: Logic phát hiện mũ bảo hiểm
+
+2.  **Red Light Violation Detection**:
+
+    - Phát hiện trạng thái đèn giao thông (RED/GREEN/YELLOW)
+    - Theo dõi xe vượt vạch dừng khi đèn đỏ
+    - Hỗ trợ cấu hình hướng vi phạm (above/below)
+    - Detection zone (vùng tứ giác) để lọc xe đúng làn
+
+3.  **ROI Configuration Tool** (`scripts/configure_roi.py`):
+
+    - Giao diện trực quan để cấu hình ROI cho từng camera
+    - Vẽ Traffic Light ROI, Stop Line, Detection Zone
+    - Lưu cấu hình vào `config/roi_config.json`
+    - Tự động lưu frame dimensions để scaling
+
+4.  **Standalone Detection Scripts**:
+
+    - `scripts/detect_redlight_violation.py`: Chạy đèn đỏ trên 1 video
+    - `scripts/detect_helmet_violation.py`: Chạy mũ bảo hiểm trên 1 video
+    - Options: `--video`, `--camera`, `--show`, `--skip`
+
+5.  **Kafka Consumers** (sử dụng shared modules):
+    - `redlight_detector_consumer.py`: Vi phạm đèn đỏ qua Kafka
+    - `helmet_detector_consumer.py`: Vi phạm mũ bảo hiểm qua Kafka
 
 ## 3. Kiến Trúc Hệ Thống (Technical Architecture)
 

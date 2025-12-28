@@ -88,6 +88,12 @@ cardiac_prediction/
 │       ├── Dockerfile
 │       └── package.json
 ├── pipeline/
+│   ├── detectors/                  # 🆕 Shared detection logic
+│   │   ├── __init__.py
+│   │   ├── base.py                # Utilities: box, drawing, config
+│   │   ├── tracker.py             # CentroidTracker class
+│   │   ├── redlight_detector.py   # Red light detection logic
+│   │   └── helmet_detector.py     # Helmet detection logic
 │   ├── producers/
 │   │   ├── kafka_producer.py      # Camera feed ingestion
 │   │   └── video_producer.py      # Multi-video parallel streaming
@@ -95,16 +101,24 @@ cardiac_prediction/
 │   │   └── spark_processor.py     # Spark + YOLO detection
 │   └── consumers/
 │       ├── db_consumer.py         # PostgreSQL writer
-│       └── helmet_detector_consumer.py  # Helmet violation detection
+│       ├── helmet_detector_consumer.py   # Helmet violation (Kafka)
+│       └── redlight_detector_consumer.py # Red light violation (Kafka)
+├── scripts/                        # 🆕 Standalone detection scripts
+│   ├── detect_helmet_violation.py # Helmet detection (standalone)
+│   ├── detect_redlight_violation.py # Red light detection (standalone)
+│   └── configure_roi.py           # ROI configuration tool
 ├── airflow/
 │   ├── dags/
 │   │   ├── traffic_monitoring_dag.py    # Traffic violation DAG
 │   │   ├── helmet_violation_dag.py      # Helmet detection (sequential)
-│   │   └── helmet_demo_dag.py           # Helmet demo (parallel)
+│   │   └── helmet_demo_dag.py           # Violation demo (parallel)
 │   └── config/
 │       ├── init_database.sql
 │       ├── init_traffic_monitoring.sql
-│       └── init_helmet_violations.sql
+│       ├── init_helmet_violations.sql
+│       └── init_redlight_violations.sql
+├── config/
+│   └── roi_config.json            # 🆕 Camera ROI configurations
 ├── data/
 │   └── video/                     # Video source files
 ├── models/                        # YOLO model files
@@ -403,10 +417,13 @@ docker compose exec traffic-monitoring-producer bash
 
 ### Phase 1: Advanced Detection
 
-- [ ] Red light violation with traffic light state detection
+- [x] Red light violation with traffic light state detection
+- [x] Helmet violation detection
+- [x] Detection zone (quadrilateral) for accurate lane filtering
+- [x] Configurable violation direction (above/below stop line)
 - [ ] License plate recognition (OCR)
 - [ ] Speed estimation
-- [ ] Vehicle tracking across frames
+- [x] Vehicle tracking across frames (CentroidTracker)
 
 ### Phase 2: Scalability
 

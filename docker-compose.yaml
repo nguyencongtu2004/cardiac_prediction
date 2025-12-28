@@ -46,6 +46,7 @@ services:
       - ./airflow/config/init_database.sql:/docker-entrypoint-initdb.d/01_init_database.sql
       - ./airflow/config/init_traffic_monitoring.sql:/docker-entrypoint-initdb.d/02_init_traffic_monitoring.sql
       - ./airflow/config/init_helmet_violations.sql:/docker-entrypoint-initdb.d/03_init_helmet_violations.sql
+      - ./airflow/config/init_redlight_violations.sql:/docker-entrypoint-initdb.d/04_init_redlight_violations.sql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s

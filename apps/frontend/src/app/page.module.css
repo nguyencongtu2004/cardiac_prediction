@@ -48,11 +48,56 @@
   margin-bottom: 2rem;
 }
 
+/* Main Content - Two Column Layout */
+.mainContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  height: calc(100vh - 200px);
+}
+
+/* Left Column - Camera (Sticky) */
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+/* Right Column - Violations (Scrollable) */
+.rightColumn {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.rightColumn::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rightColumn::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.rightColumn::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.rightColumn::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 /* Violations Container */
 .violationsContainer {
   background: #1e293b;
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.5rem;
   border: 1px solid #334155;
 }
 
@@ -75,22 +120,40 @@
 
 /* Violations List */
 .violationsList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .mainContent {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .leftColumn {
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+
+  .rightColumn {
+    height: auto;
+    max-height: 600px;
+  }
+}
+
 @media (max-width: 768px) {
   .header h1 {
     font-size: 1.5rem;
   }
 
-  .violationsList {
+  .statsContainer {
     grid-template-columns: 1fr;
   }
 
-  .statsContainer {
-    grid-template-columns: 1fr;
+  .container {
+    padding: 1rem;
   }
 }

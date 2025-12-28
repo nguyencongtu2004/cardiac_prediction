@@ -53,3 +53,5 @@ Thumbs.db
 images/
 inference_results/
 .env
+violations/
+data/

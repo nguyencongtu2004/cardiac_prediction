@@ -17,19 +17,35 @@ export function ViolationCard({ violation, apiUrl }: ViolationCardProps) {
       return `data:image/jpeg;base64,${violation.image_base64}`;
     }
     if (violation.image_path) {
-      return `${apiUrl}/violations/${violation.image_path.split("/").pop()}`;
+      // Handle both helmet and redlight violation paths
+      const filename = violation.image_path.split("/").pop();
+      const subdir =
+        violation.violation_type === "RED_LIGHT" ? "redlight/" : "";
+      return `${apiUrl}/violations/${subdir}${filename}`;
     }
     return null;
   };
 
   const imageSrc = getImageSrc();
 
+  // Determine violation type display
+  const isRedLight = violation.violation_type === "RED_LIGHT";
+  const badgeText = isRedLight ? "🚦 Vượt đèn đỏ" : "🚫 Không đội MBH";
+  const badgeClass = isRedLight ? styles.badgeRedlight : styles.badge;
+
   return (
-    <div className={styles.card}>
+    <div className={`${styles.card} ${isRedLight ? styles.cardRedlight : ""}`}>
       <div className={styles.image}>
         {imageSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageSrc} alt={`Violation ${violation.violation_id}`} />
+          <a
+            href={imageSrc}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.imageLink}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageSrc} alt={`Violation ${violation.violation_id}`} />
+          </a>
         ) : (
           <span className={styles.noImage}>Không có hình ảnh</span>
         )}
@@ -37,7 +53,7 @@ export function ViolationCard({ violation, apiUrl }: ViolationCardProps) {
 
       <div className={styles.details}>
         <div className={styles.header}>
-          <span className={styles.badge}>🚫 Không đội MBH</span>
+          <span className={badgeClass}>{badgeText}</span>
           <span className={styles.camera}>{violation.camera_id}</span>
         </div>
 
@@ -45,37 +61,66 @@ export function ViolationCard({ violation, apiUrl }: ViolationCardProps) {
 
         <div className={styles.info}>
           <span>Track ID: {violation.track_id}</span>
-          <span>Độ tin cậy: {(violation.confidence * 100).toFixed(1)}%</span>
+          <span>
+            Độ tin cậy: {((violation.confidence || 0) * 100).toFixed(1)}%
+          </span>
+          {isRedLight && violation.vehicle_type && (
+            <span>Loại xe: {violation.vehicle_type}</span>
+          )}
+          {isRedLight && violation.traffic_light_state && (
+            <span>Đèn: {violation.traffic_light_state}</span>
+          )}
         </div>
 
         <div className={styles.metadata}>
-          <span
-            className={
-              violation.metadata?.person_detected
-                ? styles.detected
-                : styles.notDetected
-            }
-          >
-            👤 Người
-          </span>
-          <span
-            className={
-              violation.metadata?.motorbike_detected
-                ? styles.detected
-                : styles.notDetected
-            }
-          >
-            🏍️ Xe máy
-          </span>
-          <span
-            className={
-              violation.metadata?.helmet_detected
-                ? styles.detected
-                : styles.notDetected
-            }
-          >
-            ⛑️ Mũ BH
-          </span>
+          {isRedLight ? (
+            // Red light violation metadata
+            <>
+              <span className={styles.detected}>
+                🚗 {violation.vehicle_type || "Xe"}
+              </span>
+              <span
+                className={
+                  violation.traffic_light_state === "RED"
+                    ? styles.notDetected
+                    : styles.detected
+                }
+              >
+                🚦 {violation.traffic_light_state || "UNKNOWN"}
+              </span>
+            </>
+          ) : (
+            // Helmet violation metadata
+            <>
+              <span
+                className={
+                  violation.metadata?.person_detected
+                    ? styles.detected
+                    : styles.notDetected
+                }
+              >
+                👤 Người
+              </span>
+              <span
+                className={
+                  violation.metadata?.motorbike_detected
+                    ? styles.detected
+                    : styles.notDetected
+                }
+              >
+                🏍️ Xe máy
+              </span>
+              <span
+                className={
+                  violation.metadata?.helmet_detected
+                    ? styles.detected
+                    : styles.notDetected
+                }
+              >
+                ⛑️ Mũ BH
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>

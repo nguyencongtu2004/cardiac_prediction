@@ -27,6 +27,7 @@ app.add_middleware(
 # Configuration
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:29092')
 HELMET_VIOLATION_TOPIC = 'helmet_violations'
+REDLIGHT_VIOLATION_TOPIC = 'redlight_violations'
 TRAFFIC_VIOLATION_TOPIC = 'traffic_violations'
 VIDEO_FRAMES_TOPIC = 'helmet_video_frames'  # Raw video frames for live camera view
 
@@ -143,6 +144,7 @@ camera_manager = CameraStreamManager()
 
 # Global variable to store latest violations (in-memory cache)
 latest_violations = []
+latest_redlight_violations = []
 
 # Database operations
 def save_violation_to_db(violation: dict):
@@ -182,6 +184,51 @@ def save_violation_to_db(violation: dict):
         
     except Exception as e:
         print(f"✗ Error saving violation to database: {e}")
+        return False
+
+
+# Database operations for Red Light Violations
+def save_redlight_violation_to_db(violation: dict):
+    """Save red light violation to database"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        bbox = violation.get('bounding_box', {})
+        
+        cursor.execute("""
+            INSERT INTO redlight_violations 
+            (violation_id, timestamp, camera_id, track_id, frame_number, violation_type,
+             vehicle_type, traffic_light_state, confidence,
+             bbox_x, bbox_y, bbox_w, bbox_h, image_path, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (violation_id) DO NOTHING
+        """, (
+            violation.get('violation_id'),
+            violation.get('timestamp'),
+            violation.get('camera_id'),
+            violation.get('track_id'),
+            violation.get('frame_number'),
+            violation.get('violation_type', 'RED_LIGHT'),
+            violation.get('vehicle_type'),
+            violation.get('traffic_light_state'),
+            violation.get('confidence'),
+            bbox.get('x'),
+            bbox.get('y'),
+            bbox.get('w'),
+            bbox.get('h'),
+            violation.get('image_path'),
+            json.dumps(violation.get('metadata', {}))
+        ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"✓ Saved red light violation {violation.get('violation_id')} to database")
+        return True
+        
+    except Exception as e:
+        print(f"✗ Error saving red light violation to database: {e}")
         return False
 
 # Kafka Consumer Thread for Helmet Violations
@@ -242,6 +289,47 @@ def traffic_kafka_consumer_thread():
     except Exception as e:
         print(f"✗ Traffic Kafka consumer error: {e}")
 
+
+# Kafka Consumer Thread for Red Light Violations
+def redlight_kafka_consumer_thread():
+    """Consume red light violations from Kafka"""
+    import time
+    retries = 5
+    for i in range(retries):
+        try:
+            consumer = KafkaConsumer(
+                REDLIGHT_VIOLATION_TOPIC,
+                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+                value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+                auto_offset_reset='latest',
+                group_id='redlight-backend-group'
+            )
+            print(f"✓ Connected to Kafka (Red Light Violations): {KAFKA_BOOTSTRAP_SERVERS}")
+            break
+        except Exception as e:
+            print(f"✗ Attempt {i+1}/{retries}: Cannot connect to Kafka - {e}")
+            if i < retries - 1:
+                time.sleep(5)
+            else:
+                print("Failed to connect to Kafka Red Light. Exiting consumer thread.")
+                return
+    
+    for message in consumer:
+        violation = message.value
+        
+        # Save to database
+        save_redlight_violation_to_db(violation)
+        
+        # Broadcast to WebSockets (with type indicator)
+        violation['type'] = 'redlight'
+        asyncio.run(manager.broadcast(json.dumps(violation)))
+        
+        # Update in-memory cache (keep last 100)
+        global latest_redlight_violations
+        latest_redlight_violations.insert(0, violation)
+        if len(latest_redlight_violations) > 100:
+            latest_redlight_violations.pop()
+
 # Kafka Consumer for Video Frames (Live Camera)
 def video_kafka_consumer_thread():
     """Consume video frames from Kafka for live camera view"""
@@ -291,16 +379,22 @@ async def startup_event():
     t3 = threading.Thread(target=video_kafka_consumer_thread, daemon=True)
     t3.start()
     
+    # Start red light violations consumer
+    t4 = threading.Thread(target=redlight_kafka_consumer_thread, daemon=True)
+    t4.start()
+    
     print("✓ Backend started successfully")
 
 @app.get("/")
 def read_root():
     return {
-        "status": "Helmet Violation Monitoring Backend Running",
-        "version": "1.0.0",
+        "status": "Traffic Violation Monitoring Backend Running",
+        "version": "2.0.0",
         "endpoints": {
             "violations": "/api/violations",
+            "redlight_violations": "/api/redlight-violations",
             "stats": "/api/stats",
+            "redlight_stats": "/api/redlight-stats",
             "websocket": "/ws"
         }
     }
@@ -535,3 +629,158 @@ def get_available_videos():
         "video_dir": VIDEO_DIR
     }
 
+
+# =========================
+# RED LIGHT VIOLATION ENDPOINTS
+# =========================
+
+@app.get("/api/redlight-violations")
+def get_redlight_violations(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    camera_id: Optional[str] = None,
+    vehicle_type: Optional[str] = None
+):
+    """Get red light violations from database with pagination"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Build query
+        query = "SELECT * FROM redlight_violations"
+        params = []
+        conditions = []
+        
+        if camera_id:
+            conditions.append("camera_id = %s")
+            params.append(camera_id)
+        
+        if vehicle_type:
+            conditions.append("vehicle_type = %s")
+            params.append(vehicle_type)
+        
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        
+        query += " ORDER BY timestamp DESC LIMIT %s OFFSET %s"
+        params.extend([limit, skip])
+        
+        cursor.execute(query, params)
+        violations = cursor.fetchall()
+        
+        # Get total count
+        count_query = "SELECT COUNT(*) as total FROM redlight_violations"
+        if conditions:
+            count_query += " WHERE " + " AND ".join(conditions)
+            cursor.execute(count_query, params[:-2])  # Exclude limit/offset
+        else:
+            cursor.execute(count_query)
+        
+        total = cursor.fetchone()['total']
+        
+        cursor.close()
+        conn.close()
+        
+        return {
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "violations": violations
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.get("/api/redlight-violations/latest")
+def get_latest_redlight_violations():
+    """Get latest red light violations from in-memory cache"""
+    return {
+        "total": len(latest_redlight_violations),
+        "violations": latest_redlight_violations
+    }
+
+
+@app.get("/api/redlight-violations/{violation_id}")
+def get_redlight_violation(violation_id: str):
+    """Get specific red light violation by ID"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT * FROM redlight_violations WHERE violation_id = %s",
+            (violation_id,)
+        )
+        violation = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if not violation:
+            raise HTTPException(status_code=404, detail="Violation not found")
+        
+        return violation
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.get("/api/redlight-stats")
+def get_redlight_stats():
+    """Get red light violation statistics"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Total violations
+        cursor.execute("SELECT COUNT(*) as total FROM redlight_violations")
+        total = cursor.fetchone()['total']
+        
+        # Violations by camera
+        cursor.execute("""
+            SELECT camera_id, COUNT(*) as count 
+            FROM redlight_violations 
+            GROUP BY camera_id
+        """)
+        by_camera = cursor.fetchall()
+        
+        # Violations by vehicle type
+        cursor.execute("""
+            SELECT vehicle_type, COUNT(*) as count 
+            FROM redlight_violations 
+            GROUP BY vehicle_type
+        """)
+        by_vehicle = cursor.fetchall()
+        
+        # Violations today
+        cursor.execute("""
+            SELECT COUNT(*) as today 
+            FROM redlight_violations 
+            WHERE DATE(timestamp) = CURRENT_DATE
+        """)
+        today = cursor.fetchone()['today']
+        
+        # Recent violations (last hour)
+        cursor.execute("""
+            SELECT COUNT(*) as recent 
+            FROM redlight_violations 
+            WHERE timestamp >= NOW() - INTERVAL '1 hour'
+        """)
+        recent = cursor.fetchone()['recent']
+        
+        cursor.close()
+        conn.close()
+        
+        return {
+            "total_violations": total,
+            "violations_today": today,
+            "violations_last_hour": recent,
+            "by_camera": by_camera,
+            "by_vehicle_type": by_vehicle
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

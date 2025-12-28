@@ -1,4 +1,4 @@
-# Quick Start Guide - Helmet Violation Detection System
+# Quick Start Guide - Traffic Violation Detection System
 
 ## 📋 Prerequisites
 
@@ -19,12 +19,13 @@ graph LR
     A[Video Files] --> B[Video Producer]
     B --> C[Kafka: helmet_video_frames]
     C --> D[Helmet Detector]
-    C --> E[Backend API]
+    C --> E[Red Light Detector]
     D --> F[Kafka: helmet_violations]
-    F --> G[Backend API]
-    G --> H[PostgreSQL]
-    E --> I[Frontend Dashboard]
-    G --> I
+    E --> G[Kafka: redlight_violations]
+    F --> H[Backend API]
+    G --> H
+    H --> I[PostgreSQL]
+    H --> J[Frontend Dashboard]
 ```
 
 ## 🚀 Quick Start (3 Steps)
@@ -51,14 +52,15 @@ Open Airflow UI: **http://localhost:8080**
 Credentials: `airflow` / `airflow`
 
 1. Navigate to DAGs page
-2. Find `helmet_demo_streaming` DAG
+2. Find `violation_demo_streaming` DAG
 3. Enable the DAG (toggle switch)
 4. Click the play button (▶️) to trigger
 
 This DAG will:
 
 - Stream all videos from `data/video/` in parallel
-- Run helmet detection on frames
+- Run **helmet detection** on frames
+- Run **red light detection** on configured cameras
 - Save violations to database
 - Stream live video to dashboard
 
@@ -143,9 +145,49 @@ curl http://localhost:8000/api/cameras
 
 | DAG Name                           | Description                                                |
 | ---------------------------------- | ---------------------------------------------------------- |
-| `helmet_demo_streaming`            | **Demo DAG** - Producer & Detector run in parallel         |
+| `violation_demo_streaming`         | **Demo DAG** - Producer + Helmet + RedLight in parallel    |
 | `helmet_violation_pipeline`        | **Full pipeline** - Sequential workflow with health checks |
 | `traffic_monitoring_full_pipeline` | Traffic violation detection (YOLO + Spark)                 |
+
+## 🛠️ Standalone Detection Scripts
+
+Run detection on individual videos without Kafka/Airflow:
+
+### Red Light Violation Detection
+
+```bash
+# With visual display
+python scripts/detect_redlight_violation.py --video data/video/cam1.mp4 --camera cam1 --show --skip 3
+
+# Without display (faster)
+python scripts/detect_redlight_violation.py --video data/video/cam1.mp4 --camera cam1 --skip 3
+```
+
+### Helmet Violation Detection
+
+```bash
+# With visual display
+python scripts/detect_helmet_violation.py --video data/video/bike-test.mp4 --show --skip 3
+
+# Without display (faster)
+python scripts/detect_helmet_violation.py --video data/video/bike-test.mp4 --skip 3
+```
+
+### ROI Configuration Tool
+
+Visually configure detection zones for each camera:
+
+```bash
+python scripts/configure_roi.py --video data/video/cam1.mp4 --camera cam1
+```
+
+**Hotkeys:**
+
+- `T` - Draw Traffic Light ROI
+- `L` - Set Stop Line position
+- `D` - Draw Detection Zone (4 points)
+- `S` - Save configuration
+- `Q` - Quit
 
 ## 🛑 Stop the System
 
