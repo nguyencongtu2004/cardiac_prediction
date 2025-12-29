@@ -2,7 +2,7 @@
 detect_redlight_violation.py - Red Light Violation Detection (Standalone)
 ==========================================================================
 Phát hiện vi phạm vượt đèn đỏ.
-Sử dụng shared detection logic từ pipeline.detectors.
+Sử dụng YOLOv8n model cho vehicle detection.
 
 Usage:
     python scripts/detect_redlight_violation.py --video data/video/cam1.mp4 --camera cam1 --show --skip 3
@@ -41,7 +41,9 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "violations", "redlight")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
 DEFAULT_VIDEO = os.path.join(DATA_DIR, "video/redlight-test.mp4")
-YOLOV8_WEIGHTS = os.path.join(MODELS_DIR, "yolov8n.pt")
+
+# Use YOLOv8n model for vehicle detection (more stable for red light detection)
+YOLOV8_MODEL_PATH = os.path.join(MODELS_DIR, "yolov8n.pt")
 
 # Detection settings
 CONF_THRES = 0.4
@@ -78,12 +80,18 @@ def main():
     
     print(f"[INFO] Loaded config for camera: {args.camera}")
     
-    # Load YOLOv8 model
-    print(f"[INFO] Loading YOLOv8 from {YOLOV8_WEIGHTS}...")
+    # Load YOLOv8n model for vehicle detection
+    print(f"[INFO] Loading YOLOv8n from {YOLOV8_MODEL_PATH}...")
+    if not os.path.exists(YOLOV8_MODEL_PATH):
+        print(f"Error: Model file not found: {YOLOV8_MODEL_PATH}")
+        print("Please ensure 'yolov8n.pt' is in the 'models/' directory.")
+        return
+    
     try:
-        yolo_model = YOLO(YOLOV8_WEIGHTS)
+        yolo_model = YOLO(YOLOV8_MODEL_PATH)
+        print("✓ YOLOv8n model loaded")
     except Exception as e:
-        print(f"Error loading YOLOv8: {e}")
+        print(f"Error loading model: {e}")
         return
     
     # Open video
@@ -118,7 +126,8 @@ def main():
     last_saved = {}
     
     print(f"\n{'='*60}")
-    print("Red Light Violation Detection - Started")
+    print("Red Light Violation Detection - YOLOv8n")
+    print(f"Model: {YOLOV8_MODEL_PATH}")
     print(f"Stop Line Y: {violation_checker.stop_line_y}")
     print(f"Violation Direction: {violation_checker.violation_direction}")
     print(f"Output: {args.output}")
@@ -169,6 +178,8 @@ def main():
                 # Draw frame info
                 cv2.putText(out, f"Frame: {frame_idx}/{total_frames} | Light: {light_state} | Violations: {violation_count}",
                            (10, H - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                cv2.putText(out, "YOLOv8n", (10, H - 50),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
                 
                 # Save violations
                 for tid, track_info in violations:
@@ -200,6 +211,7 @@ def main():
     
     print(f"\n{'='*60}")
     print("Detection Complete!")
+    print(f"  Model: yolov8n.pt")
     print(f"  Total frames: {frame_idx}")
     print(f"  Violations detected: {violation_count}")
     print(f"  Output directory: {args.output}")

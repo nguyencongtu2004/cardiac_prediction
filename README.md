@@ -122,9 +122,10 @@ cardiac_prediction/
 ├── data/
 │   └── video/                     # Video source files
 ├── models/                        # YOLO model files
-│   ├── yolov3-helmet.cfg
-│   ├── yolov3-helmet.weights
-│   └── yolov8n.pt
+│   ├── best.pt                    # 🆕 Unified model (8 classes)
+│   ├── yolov3-helmet.cfg          # Legacy helmet model
+│   ├── yolov3-helmet.weights      # Legacy helmet weights
+│   └── yolov8n.pt                 # General object detection
 ├── docker/
 │   ├── Dockerfile                 # Producer image
 │   └── base/

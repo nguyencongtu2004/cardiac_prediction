@@ -1,3 +1,6 @@
+-- Connect to traffic_monitoring database
+\c traffic_monitoring
+
 -- Create redlight violations table
 CREATE TABLE IF NOT EXISTS redlight_violations (
     id SERIAL PRIMARY KEY,

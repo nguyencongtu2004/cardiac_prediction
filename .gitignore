@@ -12,7 +12,7 @@ projects/*/data/valid_data/
 projects/*/data/test_data/
 
 # Model files (large binary files)
-models/
+# models/
 projects/*/models/cardiac_rf_model/
 projects/*/models/*.pt
 *.model

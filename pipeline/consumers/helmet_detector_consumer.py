@@ -4,7 +4,9 @@ helmet_detector_consumer.py - Kafka Consumer for Helmet Violation Detection
 Consumes video frames from Kafka and detects helmet violations.
 Sends violations to 'helmet_violations' topic and saves to database.
 
-Uses shared detection logic from pipeline.detectors.
+Uses UNIFIED model (best.pt) with 8 classes:
+0: person, 1: bicycle, 2: car, 3: motorcycle,
+4: bus, 5: truck, 6: with_helmet, 7: without_helmet
 """
 
 import os
@@ -35,9 +37,8 @@ if PROJECT_ROOT not in sys.path:
 from pipeline.detectors.base import clamp_box, draw_box, head_region, MODELS_DIR
 from pipeline.detectors.tracker import CentroidTracker
 from pipeline.detectors.helmet_detector import (
-    get_output_layer_names, detect_helmets, detect_persons_and_bikes,
-    associate_riders, check_helmet_violation, annotate_helmet_frame,
-    HEAD_RATIO
+    detect_violations_unified, annotate_unified_frame,
+    ViolationDeduplicator, HEAD_RATIO
 )
 
 
@@ -52,20 +53,15 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:29092')
 INPUT_TOPIC = 'helmet_video_frames'
 OUTPUT_TOPIC = 'helmet_violations'
 
-# Model paths
-HELMET_CFG = os.path.join(MODELS_DIR, "yolov3-helmet.cfg")
-HELMET_WEIGHTS = os.path.join(MODELS_DIR, "yolov3-helmet.weights")
-YOLOV8_WEIGHTS = os.path.join(MODELS_DIR, "yolov8n.pt")
+# Use unified model (best.pt)
+UNIFIED_MODEL_PATH = os.path.join(MODELS_DIR, "best.pt")
 
 # Detection settings
-CONF_THRES = 0.5
-NMS_THRES = 0.4
-INPUT_SIZE = 416
+CONF_THRES = 0.25  # Lower threshold for better recall
 
 # Tracking
 TRACK_MAX_DIST = 80
 TRACK_TTL_SEC = 1.0
-SAVE_COOLDOWN_SEC = 2.0
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -115,28 +111,20 @@ def create_producer():
 # =========================
 def main():
     print("="*60)
-    print("Helmet Violation Detector - Kafka Consumer")
+    print("Helmet Violation Detector - Kafka Consumer (UNIFIED MODEL)")
     print("="*60)
     
-    # Load YOLOv3 Helmet model
-    print("[INFO] Loading YOLOv3 (Helmet)...")
-    if not os.path.exists(HELMET_CFG) or not os.path.exists(HELMET_WEIGHTS):
-        print(f"[ERROR] Helmet model files missing")
+    # Load Unified Model (best.pt)
+    print(f"[INFO] Loading UNIFIED model from {UNIFIED_MODEL_PATH}...")
+    if not os.path.exists(UNIFIED_MODEL_PATH):
+        print(f"[ERROR] Model file not found: {UNIFIED_MODEL_PATH}")
         return
     
-    helmet_net = cv2.dnn.readNetFromDarknet(HELMET_CFG, HELMET_WEIGHTS)
-    helmet_net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-    helmet_net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-    helmet_out = get_output_layer_names(helmet_net)
-    print("[INFO] YOLOv3 Helmet model loaded")
-    
-    # Load YOLOv8 model
-    print(f"[INFO] Loading YOLOv8 from {YOLOV8_WEIGHTS}...")
     try:
-        yolo8_model = YOLO(YOLOV8_WEIGHTS)
-        print("[INFO] YOLOv8 model loaded")
+        model = YOLO(UNIFIED_MODEL_PATH)
+        print("✓ Unified model loaded (8 classes: person, vehicles, with_helmet, without_helmet)")
     except Exception as e:
-        print(f"[ERROR] Failed to load YOLOv8: {e}")
+        print(f"[ERROR] Failed to load model: {e}")
         return
     
     # Create Kafka connections
@@ -145,7 +133,7 @@ def main():
     
     # Tracking state per camera
     trackers = {}  # camera_id -> CentroidTracker
-    last_saved = {}  # (camera_id, track_id) -> timestamp
+    deduplicators = {}  # camera_id -> ViolationDeduplicator
     
     # Stats
     frame_count = 0
@@ -163,7 +151,6 @@ def main():
             
             # Decode frame
             try:
-                # Producer sends 'image_base64' key
                 frame_b64 = frame_data.get('image_base64') or frame_data.get('frame')
                 if not frame_b64:
                     print(f"[ERROR] No image data in message")
@@ -181,61 +168,50 @@ def main():
             H, W = frame.shape[:2]
             now_ts = time.time()
             
-            # Initialize tracker for this camera
+            # Initialize tracker and deduplicator for this camera
             if camera_id not in trackers:
                 trackers[camera_id] = CentroidTracker(max_dist=TRACK_MAX_DIST, ttl_sec=TRACK_TTL_SEC)
+            if camera_id not in deduplicators:
+                deduplicators[camera_id] = ViolationDeduplicator()
+            
             tracker = trackers[camera_id]
+            deduplicator = deduplicators[camera_id]
             
-            # A. Detect Helmets (YOLOv3)
-            helmet_boxes = detect_helmets(helmet_net, helmet_out, frame, CONF_THRES, NMS_THRES, INPUT_SIZE)
+            # Detect violations using unified model
+            violations, all_detections = detect_violations_unified(
+                model, frame, tracker, deduplicator, now_ts, CONF_THRES
+            )
             
-            # B. Detect Persons + Bikes (YOLOv8)
-            persons, bikes = detect_persons_and_bikes(yolo8_model, frame, CONF_THRES)
-            
-            if len(persons) == 0 or len(bikes) == 0:
-                if frame_count % 100 == 0:
-                    print(f"[Frame {frame_count}] No riders detected")
-                continue
-            
-            # C. Associate Riders
-            riders = associate_riders(persons, bikes)
-            
-            if len(riders) == 0:
-                continue
-            
-            # D. Track Riders
-            rider_boxes = [r[0] for r in riders]
-            tracked = tracker.update([(box, "rider") for box in rider_boxes], now_ts)
-            
-            # E. Check Violations
-            violations = []
-            for tid, track_info in tracked.items():
-                pbox = track_info["box"]
-                
-                if check_helmet_violation(pbox, helmet_boxes):
-                    key = (camera_id, tid)
-                    last = last_saved.get(key, 0)
-                    if (now_ts - last) >= SAVE_COOLDOWN_SEC:
-                        violations.append((tid, pbox))
-                        last_saved[key] = now_ts
+            # Log detection info
+            det_info = f"({len(all_detections.get('person_boxes', []))}p, {len(all_detections.get('motorcycle_boxes', []))}m)"
             
             if violations:
-                print(f"\n[Frame {frame_count}] ⚠️  {len(violations)} violation(s) detected!")
+                print(f"\n[Frame {frame_count}] ⚠️  {len(violations)} violation(s) detected! {det_info}")
             elif frame_count % 50 == 0:
-                print(f"[Frame {frame_count}] ✓ {len(tracked)} rider(s) tracked", end='\r')
+                riders_count = (len(all_detections.get('riders_with_helmet', [])) + 
+                               len(all_detections.get('riders_without_helmet', [])))
+                print(f"[Frame {frame_count}] ✓ {riders_count} rider(s) tracked {det_info}", end='\r')
             
-            # F. Process Violations
-            for tid, pbox in violations:
+            # Process Violations
+            for violation_info in violations:
                 violation_count += 1
                 
+                track_id = violation_info['track_id']
+                box = violation_info['box']
+                confidence = violation_info['confidence']
+                method = violation_info.get('method', 'unknown')
+                
                 # Create annotated image
-                out = annotate_helmet_frame(frame, helmet_boxes, bikes, 
-                                           {tid: pbox for tid, _ in [(tid, pbox)]}, 
-                                           [(tid, pbox)])
+                out = annotate_unified_frame(frame, all_detections, [violation_info])
+                
+                # Draw violation box
+                draw_box(out, box, f"NO HELMET {track_id}", color=(0, 0, 255), thickness=3)
                 
                 # Add camera info
                 cv2.putText(out, f"Camera: {camera_id}", (W - 200, 30),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(out, f"Conf: {confidence:.2f} | {method}", (10, H - 20),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
                 
                 # Save image
                 violation_id = str(uuid.uuid4())
@@ -256,12 +232,16 @@ def main():
                     "violation_type": "no_helmet",
                     "image_path": filepath,
                     "image_base64": img_base64,
-                    "bounding_box": pbox,
-                    "track_id": tid,
+                    "bounding_box": box,
+                    "track_id": track_id,
+                    "confidence": confidence,
+                    "detection_method": method,
                     "metadata": {
                         "frame_size": [W, H],
-                        "helmets_detected": len(helmet_boxes),
-                        "riders_tracked": len(tracked)
+                        "persons_detected": len(all_detections.get('person_boxes', [])),
+                        "vehicles_detected": len(all_detections.get('motorcycle_boxes', [])),
+                        "helmets_detected": len(all_detections.get('helmet_boxes', [])),
+                        "no_helmets_detected": len(all_detections.get('no_helmet_boxes', []))
                     }
                 }
                 
@@ -269,7 +249,7 @@ def main():
                 try:
                     producer.send(OUTPUT_TOPIC, violation_msg)
                     producer.flush()
-                    print(f"  📤 Sent violation to Kafka: {violation_id[:8]}...")
+                    print(f"  📤 Sent violation to Kafka: {violation_id[:8]}... | conf={confidence:.2f} | {method}")
                 except Exception as e:
                     print(f"  ⚠️  Failed to send to Kafka: {e}")
                 
