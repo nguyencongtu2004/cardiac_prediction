@@ -155,6 +155,39 @@ Xây dựng hệ thống tự động phát hiện các hành vi vi phạm giao 
     - `redlight_detector_consumer.py`: Vi phạm đèn đỏ qua Kafka
     - `helmet_detector_consumer.py`: Vi phạm mũ bảo hiểm qua Kafka
 
+### Giai Đoạn 7: Lane Violation Detection ✅ (Đã hoàn thành)
+
+**Mục tiêu**: Phát hiện vi phạm lấn làn (vượt vạch liền) dựa trên image processing.
+
+1.  **Lane Detection Module** (`pipeline/detectors/lane_detector.py`):
+
+    - `LaneLine` class: Đại diện cho vạch kẻ làn đường (solid/dashed)
+    - `LaneViolationChecker` class: Kiểm tra xe vượt qua vạch liền
+    - Point-to-line distance calculation
+    - Side tracking để phát hiện crossing
+
+2.  **Configuration** (`config/roi_config.json`):
+
+    - `lane_lines`: Mảng các vạch kẻ làn với tọa độ và loại (solid/dashed)
+    - `lane_crossing_threshold`: Ngưỡng khoảng cách (pixels)
+    - Tự động scale theo kích thước frame thực tế
+
+3.  **Standalone Script** (`scripts/detect_lane_violation.py`):
+
+    - Sử dụng YOLOv8n cho vehicle detection
+    - CentroidTracker để theo dõi xe
+    - Lưu ảnh vi phạm vào `violations/lane/`
+    - Options: `--video`, `--camera`, `--show`, `--skip`
+
+4.  **Kafka Consumer** (`pipeline/consumers/lane_detector_consumer.py`):
+
+    - Topic: `lane_violations`
+    - Phát hiện real-time qua Kafka streaming
+    - Metadata: `crossed_line_type`, `from_side`, `to_side`
+
+5.  **Database Schema** (`airflow/config/init_lane_violations.sql`):
+    - Table `lane_violations` với indexes cho query hiệu quả
+
 ## 3. Kiến Trúc Hệ Thống (Technical Architecture)
 
 ```mermaid

@@ -7,10 +7,8 @@ Ensure you have:
 - ✅ Docker and Docker Compose installed
 - ✅ Video files in `data/video/` directory (e.g., `bike-test.mp4`)
 - ✅ YOLO models in `models/` directory:
-  - `yolov3-helmet.cfg`
-  - `yolov3-helmet.weights`
-  - `helmet.names`
-  - `yolov8n.pt`
+ - `yolov8n.pt`
+  - `best.pt`
 
 ## 🏗️ Architecture Overview
 
@@ -20,12 +18,15 @@ graph LR
     B --> C[Kafka: helmet_video_frames]
     C --> D[Helmet Detector]
     C --> E[Red Light Detector]
-    D --> F[Kafka: helmet_violations]
-    E --> G[Kafka: redlight_violations]
-    F --> H[Backend API]
-    G --> H
-    H --> I[PostgreSQL]
-    H --> J[Frontend Dashboard]
+    C --> F[Lane Detector]
+    D --> G[Kafka: helmet_violations]
+    E --> H[Kafka: redlight_violations]
+    F --> I[Kafka: lane_violations]
+    G --> J[Backend API]
+    H --> J
+    I --> J
+    J --> K[PostgreSQL]
+    J --> L[Frontend Dashboard]
 ```
 
 ## 🚀 Quick Start (3 Steps)
@@ -61,6 +62,7 @@ This DAG will:
 - Stream all videos from `data/video/` in parallel
 - Run **helmet detection** on frames
 - Run **red light detection** on configured cameras
+- Run **lane violation detection** on configured cameras
 - Save violations to database
 - Stream live video to dashboard
 
@@ -173,6 +175,16 @@ python scripts/detect_helmet_violation.py --video data/video/bike-test.mp4 --sho
 python scripts/detect_helmet_violation.py --video data/video/bike-test.mp4 --skip 3
 ```
 
+### Lane Violation Detection
+
+```bash
+# With visual display
+python scripts/detect_lane_violation.py --video data/video/cam1.mp4 --camera cam1 --show --skip 3
+
+# Without display (faster)
+python scripts/detect_lane_violation.py --video data/video/cam1.mp4 --camera cam1 --skip 3
+```
+
 ### ROI Configuration Tool
 
 Visually configure detection zones for each camera:
@@ -186,6 +198,7 @@ python scripts/configure_roi.py --video data/video/cam1.mp4 --camera cam1
 - `T` - Draw Traffic Light ROI
 - `L` - Set Stop Line position
 - `D` - Draw Detection Zone (4 points)
+- `N` - Draw Lane Lines (for lane violation)
 - `S` - Save configuration
 - `Q` - Quit
 

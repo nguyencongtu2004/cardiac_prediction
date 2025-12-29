@@ -93,7 +93,8 @@ cardiac_prediction/
 │   │   ├── base.py                # Utilities: box, drawing, config
 │   │   ├── tracker.py             # CentroidTracker class
 │   │   ├── redlight_detector.py   # Red light detection logic
-│   │   └── helmet_detector.py     # Helmet detection logic
+│   │   ├── helmet_detector.py     # Helmet detection logic
+│   │   └── lane_detector.py       # 🆕 Lane violation detection logic
 │   ├── producers/
 │   │   ├── kafka_producer.py      # Camera feed ingestion
 │   │   └── video_producer.py      # Multi-video parallel streaming
@@ -102,10 +103,12 @@ cardiac_prediction/
 │   └── consumers/
 │       ├── db_consumer.py         # PostgreSQL writer
 │       ├── helmet_detector_consumer.py   # Helmet violation (Kafka)
-│       └── redlight_detector_consumer.py # Red light violation (Kafka)
+│       ├── redlight_detector_consumer.py # Red light violation (Kafka)
+│       └── lane_detector_consumer.py     # 🆕 Lane violation (Kafka)
 ├── scripts/                        # 🆕 Standalone detection scripts
 │   ├── detect_helmet_violation.py # Helmet detection (standalone)
 │   ├── detect_redlight_violation.py # Red light detection (standalone)
+│   ├── detect_lane_violation.py   # 🆕 Lane violation (standalone)
 │   └── configure_roi.py           # ROI configuration tool
 ├── airflow/
 │   ├── dags/
@@ -116,7 +119,8 @@ cardiac_prediction/
 │       ├── init_database.sql
 │       ├── init_traffic_monitoring.sql
 │       ├── init_helmet_violations.sql
-│       └── init_redlight_violations.sql
+│       ├── init_redlight_violations.sql
+│       └── init_lane_violations.sql     # 🆕 Lane violations table
 ├── config/
 │   └── roi_config.json            # 🆕 Camera ROI configurations
 ├── data/
@@ -422,6 +426,7 @@ docker compose exec traffic-monitoring-producer bash
 - [x] Helmet violation detection
 - [x] Detection zone (quadrilateral) for accurate lane filtering
 - [x] Configurable violation direction (above/below stop line)
+- [x] Lane violation detection (crossing solid lines) 🆕
 - [ ] License plate recognition (OCR)
 - [ ] Speed estimation
 - [x] Vehicle tracking across frames (CentroidTracker)
