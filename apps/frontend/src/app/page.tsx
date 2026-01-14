@@ -42,7 +42,7 @@ export default function Home() {
   const wsViolationsRef = useRef<Map<string, Violation>>(new Map());
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-  // Merge WS violations with API violations
+  // Merge WS violations with API violations, preserving image_base64 from WS
   const mergeViolations = useCallback(
     (apiViolations: Violation[]): Violation[] => {
       const apiViolationIds = new Set(apiViolations.map((v) => v.violation_id));
@@ -52,19 +52,35 @@ export default function Home() {
       wsViolationsRef.current.forEach((violation, id) => {
         if (!apiViolationIds.has(id)) {
           wsOnlyViolations.push(violation);
-        } else {
-          // If it's now in API, remove from WS tracking
-          wsViolationsRef.current.delete(id);
         }
+        // Keep WS violations in ref to preserve image_base64 for matching
       });
 
-      // Combine: WS-only violations first (newest), then API violations
-      const combined = [...wsOnlyViolations, ...apiViolations]
+      // For API violations, try to get image_base64 from WS ref if available
+      const enrichedApiViolations = apiViolations.map((apiV) => {
+        const wsV = wsViolationsRef.current.get(apiV.violation_id);
+        if (wsV?.image_base64) {
+          // Preserve image_base64 from WebSocket
+          return { ...apiV, image_base64: wsV.image_base64 };
+        }
+        return apiV;
+      });
+
+      // Combine: WS-only violations first (newest), then enriched API violations
+      const combined = [...wsOnlyViolations, ...enrichedApiViolations]
         .sort(
           (a, b) =>
             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         )
         .slice(0, 50);
+
+      // Cleanup: remove old WS violations (keep only last 100)
+      if (wsViolationsRef.current.size > 100) {
+        const entries = Array.from(wsViolationsRef.current.entries());
+        entries.slice(0, entries.length - 100).forEach(([id]) => {
+          wsViolationsRef.current.delete(id);
+        });
+      }
 
       return combined;
     },

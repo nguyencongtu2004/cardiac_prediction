@@ -7,7 +7,7 @@ Sử dụng UNIFIED model (best.pt) với 8 classes:
 4: bus, 5: truck, 6: with_helmet, 7: without_helmet
 
 Usage:
-    python scripts/detect_helmet_violation.py --video data/video/cam4.mp4 --show --skip 3
+    python scripts/detect_helmet_violation.py --video data/video/helmet_segment_001.mp4 --show --skip 3
     python scripts/detect_helmet_violation.py --video data/video/bike-test.mp4 --show
 """
 

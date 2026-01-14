@@ -224,7 +224,7 @@ def save_config(camera_id="default"):
         "stop_line": {
             "y": stop_line_y,
             "tolerance": 30,
-            "violation_direction": "below"  # "below" = xe vượt xuống dưới vạch, "above" = xe vượt lên trên vạch
+            "violation_direction": "above"  # "below" = xe vượt xuống dưới vạch, "above" = xe vượt lên trên vạch
         },
         "traffic_light_roi": traffic_light_roi.copy(),
         "detection_zone": zone_points,  # 4 điểm tứ giác [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]

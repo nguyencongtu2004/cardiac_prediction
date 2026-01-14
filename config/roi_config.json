@@ -302,5 +302,830 @@
         255
       ]
     }
+  },
+  "red_light_segment_001": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 840,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1503,
+      "y1": 240,
+      "x2": 1634,
+      "y2": 474
+    },
+    "detection_zone": [
+      [
+        14,
+        1074
+      ],
+      [
+        543,
+        472
+      ],
+      [
+        1276,
+        490
+      ],
+      [
+        1692,
+        1077
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_002": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 846,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1533,
+      "y1": 286,
+      "x2": 1638,
+      "y2": 400
+    },
+    "detection_zone": [
+      [
+        153,
+        1074
+      ],
+      [
+        232,
+        502
+      ],
+      [
+        1470,
+        534
+      ],
+      [
+        1850,
+        1066
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_003": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 814,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1528,
+      "y1": 285,
+      "x2": 1636,
+      "y2": 392
+    },
+    "detection_zone": [
+      [
+        148,
+        1074
+      ],
+      [
+        226,
+        477
+      ],
+      [
+        1464,
+        498
+      ],
+      [
+        1809,
+        1074
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_004": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 846,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1533,
+      "y1": 286,
+      "x2": 1638,
+      "y2": 400
+    },
+    "detection_zone": [
+      [
+        153,
+        1074
+      ],
+      [
+        232,
+        502
+      ],
+      [
+        1470,
+        534
+      ],
+      [
+        1850,
+        1066
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_005": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 846,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1533,
+      "y1": 286,
+      "x2": 1638,
+      "y2": 400
+    },
+    "detection_zone": [
+      [
+        153,
+        1074
+      ],
+      [
+        232,
+        502
+      ],
+      [
+        1470,
+        534
+      ],
+      [
+        1850,
+        1066
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_006": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 846,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1214,
+      "y1": 100,
+      "x2": 1274,
+      "y2": 237
+    },
+    "detection_zone": [
+      [
+        147,
+        1074
+      ],
+      [
+        144,
+        562
+      ],
+      [
+        1606,
+        588
+      ],
+      [
+        1612,
+        1076
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_007": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 828,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1191,
+      "y1": 9,
+      "x2": 1266,
+      "y2": 142
+    },
+    "detection_zone": [
+      [
+        82,
+        1077
+      ],
+      [
+        514,
+        504
+      ],
+      [
+        1286,
+        520
+      ],
+      [
+        1758,
+        1071
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_008": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 822,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1131,
+      "y1": 70,
+      "x2": 1204,
+      "y2": 231
+    },
+    "detection_zone": [
+      [
+        63,
+        1066
+      ],
+      [
+        396,
+        554
+      ],
+      [
+        1160,
+        561
+      ],
+      [
+        1544,
+        1066
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_009": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 822,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1131,
+      "y1": 70,
+      "x2": 1204,
+      "y2": 231
+    },
+    "detection_zone": [
+      [
+        74,
+        1078
+      ],
+      [
+        362,
+        633
+      ],
+      [
+        1226,
+        660
+      ],
+      [
+        1526,
+        1077
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_010": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 914,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1131,
+      "y1": 70,
+      "x2": 1204,
+      "y2": 231
+    },
+    "detection_zone": [
+      [
+        9,
+        1064
+      ],
+      [
+        225,
+        669
+      ],
+      [
+        1269,
+        684
+      ],
+      [
+        1562,
+        1066
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
+  },
+  "red_light_segment_011": {
+    "frame_width": 1920,
+    "frame_height": 1080,
+    "stop_line": {
+      "y": 914,
+      "tolerance": 30,
+      "violation_direction": "above"
+    },
+    "traffic_light_roi": {
+      "x1": 1131,
+      "y1": 70,
+      "x2": 1204,
+      "y2": 231
+    },
+    "detection_zone": [
+      [
+        9,
+        1064
+      ],
+      [
+        225,
+        669
+      ],
+      [
+        1269,
+        684
+      ],
+      [
+        1562,
+        1066
+      ]
+    ],
+    "color_detection": {
+      "red_lower1": [
+        0,
+        100,
+        100
+      ],
+      "red_upper1": [
+        10,
+        255,
+        255
+      ],
+      "red_lower2": [
+        160,
+        100,
+        100
+      ],
+      "red_upper2": [
+        180,
+        255,
+        255
+      ],
+      "green_lower": [
+        40,
+        100,
+        100
+      ],
+      "green_upper": [
+        80,
+        255,
+        255
+      ],
+      "yellow_lower": [
+        20,
+        100,
+        100
+      ],
+      "yellow_upper": [
+        35,
+        255,
+        255
+      ]
+    }
   }
 }

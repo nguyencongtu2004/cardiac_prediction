@@ -19,7 +19,7 @@ KAFKA_TOPIC = 'helmet_video_frames'
 # Support single video path OR directory with multiple videos
 VIDEO_PATH = os.getenv('VIDEO_PATH', '')
 VIDEO_DIR = os.getenv('VIDEO_DIR', '/app/data/video')
-TARGET_FPS = float(os.getenv('TARGET_FPS', '7'))  # 5-10 fps
+TARGET_FPS = float(os.getenv('TARGET_FPS', '15'))  # Higher FPS for better detection
 CAMERA_ID = os.getenv('CAMERA_ID', '')  # If empty, use filename as camera_id
 LOOP_VIDEO = os.getenv('LOOP_VIDEO', 'false').lower() == 'true'  # Default: no loop
 
@@ -109,7 +109,7 @@ def stream_single_video(producer: KafkaProducer, video_path: str, camera_id: str
                 frame = cv2.resize(frame, None, fx=scale, fy=scale)
             
             # Encode frame to JPEG then base64
-            _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
+            _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
             image_base64 = base64.b64encode(buffer).decode('utf-8')
             
             # Create message

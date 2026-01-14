@@ -276,17 +276,22 @@ def main():
                 img_base64 = base64.b64encode(img_encoded.tobytes()).decode('utf-8')
                 
                 # Create violation message
+                # Convert box [x,y,w,h] to dict for database compatibility
+                bbox_dict = {"x": box[0], "y": box[1], "w": box[2], "h": box[3]} if len(box) == 4 else {}
+                
                 violation_msg = {
                     "violation_id": violation_id,
                     "timestamp": datetime.now().isoformat(),
                     "camera_id": camera_id,
                     "vehicle_type": vehicle_type,
                     "traffic_light_state": light_state,
-                    "violation_type": "red_light",
+                    "violation_type": "RED_LIGHT",
                     "image_path": filepath,
                     "image_base64": img_base64,
-                    "bounding_box": box,
+                    "bounding_box": bbox_dict,
                     "track_id": tid,
+                    "frame_number": frame_count,
+                    "confidence": 0.9,  # Default confidence for red light violations
                     "metadata": {
                         "stop_line_y": stop_line_y,
                         "violation_direction": violation_direction,
