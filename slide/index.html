@@ -1,0 +1,1429 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hệ Thống Phát Hiện Vi Phạm Giao Thông Thời Gian Thực</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --bg: #0a0e1a;
+        --surface: #111827;
+        --surface2: #1e293b;
+        --accent: #6366f1;
+        --accent2: #818cf8;
+        --cyan: #22d3ee;
+        --emerald: #34d399;
+        --rose: #fb7185;
+        --amber: #fbbf24;
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --border: rgba(99, 102, 241, 0.2);
+      }
+      html,
+      body {
+        height: 100%;
+        font-family: "Inter", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        overflow: hidden;
+      }
+
+      .slide-container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 60px 80px;
+        opacity: 0;
+        transform: translateX(60px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .slide.active {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: all;
+        z-index: 1;
+      }
+      .slide.prev {
+        opacity: 0;
+        transform: translateX(-60px);
+      }
+
+      /* Navigation */
+      .nav {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: rgba(17, 24, 39, 0.85);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        border-radius: 50px;
+        padding: 10px 24px;
+        z-index: 100;
+      }
+      .nav button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: all 0.2s;
+      }
+      .nav button:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .nav button:disabled:hover {
+        background: transparent;
+      }
+      .dots {
+        display: flex;
+        gap: 8px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .dot.active {
+        background: var(--accent);
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+        width: 28px;
+        border-radius: 10px;
+      }
+      .slide-counter {
+        font-size: 13px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        min-width: 50px;
+        text-align: center;
+      }
+
+      /* Typography */
+      h1 {
+        font-size: clamp(28px, 3.5vw, 48px);
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        font-size: clamp(22px, 2.8vw, 38px);
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 32px;
+      }
+      h3 {
+        font-size: clamp(16px, 1.6vw, 22px);
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      p,
+      .desc {
+        font-size: clamp(14px, 1.2vw, 18px);
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .gradient-text {
+        background: linear-gradient(135deg, var(--accent2), var(--cyan));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .tag {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .tag-indigo {
+        background: rgba(99, 102, 241, 0.15);
+        color: var(--accent2);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+      }
+      .tag-cyan {
+        background: rgba(34, 211, 238, 0.12);
+        color: var(--cyan);
+        border: 1px solid rgba(34, 211, 238, 0.3);
+      }
+      .tag-emerald {
+        background: rgba(52, 211, 153, 0.12);
+        color: var(--emerald);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+      }
+      .tag-rose {
+        background: rgba(251, 113, 133, 0.12);
+        color: var(--rose);
+        border: 1px solid rgba(251, 113, 133, 0.3);
+      }
+
+      /* Cards */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s;
+      }
+      .card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(99, 102, 241, 0.1);
+      }
+
+      /* Grid */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        width: 100%;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 100%;
+      }
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        width: 100%;
+      }
+      .full-w {
+        width: 100%;
+      }
+
+      /* Tables */
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: clamp(12px, 1vw, 15px);
+      }
+      th {
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--accent2);
+        font-weight: 600;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 2px solid var(--accent);
+      }
+      th:first-child {
+        border-radius: 10px 0 0 0;
+      }
+      th:last-child {
+        border-radius: 0 10px 0 0;
+      }
+      td {
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+      }
+      tr:hover td {
+        background: rgba(99, 102, 241, 0.04);
+        color: var(--text);
+      }
+      .highlight-row td {
+        color: var(--text);
+        font-weight: 600;
+        background: rgba(99, 102, 241, 0.06);
+      }
+
+      /* Metric */
+      .metric {
+        text-align: center;
+        padding: 20px;
+      }
+      .metric-value {
+        font-size: clamp(28px, 3vw, 42px);
+        font-weight: 800;
+        line-height: 1;
+      }
+      .metric-label {
+        font-size: clamp(11px, 0.9vw, 14px);
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      /* Icons */
+      .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-bottom: 12px;
+        flex-shrink: 0;
+      }
+
+      /* BG effects */
+      .glow {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.15;
+        pointer-events: none;
+      }
+      .glow-1 {
+        background: var(--accent);
+        top: -100px;
+        right: -100px;
+      }
+      .glow-2 {
+        background: var(--cyan);
+        bottom: -100px;
+        left: -100px;
+      }
+      .glow-3 {
+        background: var(--rose);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      /* Slide 1 special */
+      .title-slide {
+        text-align: center;
+      }
+      .title-slide h1 {
+        font-size: clamp(30px, 3.8vw, 52px);
+        margin-bottom: 16px;
+      }
+      .title-slide .subtitle {
+        font-size: clamp(16px, 1.5vw, 22px);
+        color: var(--cyan);
+        font-weight: 500;
+        margin-bottom: 32px;
+      }
+      .student-info {
+        display: flex;
+        gap: 40px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .student-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 28px;
+        text-align: center;
+        min-width: 200px;
+      }
+      .student-card .name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+      .student-card .id {
+        color: var(--muted);
+        font-size: 13px;
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      /* Architecture */
+      .arch-flow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 16px 0;
+      }
+      .arch-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 20px;
+        text-align: center;
+        min-width: 120px;
+      }
+      .arch-box .ab-icon {
+        font-size: 24px;
+        margin-bottom: 6px;
+      }
+      .arch-box .ab-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .arch-box .ab-tech {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+      }
+      .arrow {
+        color: var(--accent2);
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+
+      /* Progress bar */
+      .slide-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--cyan));
+        z-index: 101;
+        transition: width 0.4s ease;
+      }
+
+      /* Responsive */
+      @media (max-width: 900px) {
+        .slide {
+          padding: 30px 24px;
+        }
+        .grid-2,
+        .grid-3,
+        .grid-4 {
+          grid-template-columns: 1fr;
+        }
+        .student-info {
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+        }
+        .arch-flow {
+          flex-direction: column;
+        }
+        .arrow {
+          transform: rotate(90deg);
+        }
+      }
+
+      /* Lists */
+      .feature-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .feature-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: clamp(13px, 1.1vw, 16px);
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .feature-list li .li-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        margin-top: 2px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .badge-green {
+        background: rgba(52, 211, 153, 0.12);
+        color: var(--emerald);
+      }
+      .badge-red {
+        background: rgba(251, 113, 133, 0.12);
+        color: var(--rose);
+      }
+      .badge-yellow {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber);
+      }
+
+      .section-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-progress" id="progress"></div>
+
+    <div class="slide-container" id="slideContainer">
+      <!-- ===== SLIDE 1: Title ===== -->
+      <div class="slide active title-slide" data-slide="0">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <span class="tag tag-indigo" style="margin-bottom: 12px"
+          >ĐỒ ÁN MÔN HỌC — DỮ LIỆU LỚN (SE363)</span
+        >
+        <h1>
+          Phát Hiện Vi Phạm<br /><span class="gradient-text">Giao Thông</span>
+        </h1>
+        <p class="subtitle">
+          Traffic Violation Detection using YOLOv8 & Streaming Pipeline
+        </p>
+        <div style="margin-top: 8px; font-size: 13px; color: var(--muted)">
+          Trường Đại học Công nghệ Thông tin — ĐHQG TP.HCM · Khoa Công nghệ Phần
+          mềm
+        </div>
+        <div style="margin-top: 4px; font-size: 13px; color: var(--muted)">
+          GVHD: <strong style="color: var(--text)">Đỗ Trọng Hợp</strong>,
+          <strong style="color: var(--text)">Nguyễn Ngọc Quí</strong> · Nhóm 27
+        </div>
+        <div class="student-info" style="margin-top: 20px">
+          <div class="student-card">
+            <div class="name">Nguyễn Công Tú</div>
+            <div class="id">22521591</div>
+          </div>
+          <div class="student-card">
+            <div class="name">Võ Hoàng Tuấn</div>
+            <div class="id">22521612</div>
+          </div>
+          <div class="student-card">
+            <div class="name">Võ Lưu Chí Thiện</div>
+            <div class="id">23521489</div>
+          </div>
+        </div>
+        <div
+          style="
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+          "
+        >
+          <span class="tag tag-cyan">YOLOv8</span
+          ><span class="tag tag-emerald">Apache Kafka</span>
+          <span class="tag tag-rose">FastAPI</span
+          ><span class="tag tag-indigo">Next.js</span>
+        </div>
+      </div>
+
+      <!-- ===== SLIDE 2: Contributions ===== -->
+      <div class="slide" data-slide="1">
+        <div class="glow glow-3"></div>
+        <div class="full-w">
+          <div class="section-label">
+            <span class="tag tag-cyan">01</span>
+            <h2 style="margin: 0">Đóng Góp Của Đề Tài</h2>
+          </div>
+          <div class="grid-2" style="margin-top: 16px">
+            <div class="card">
+              <div
+                class="icon-circle"
+                style="background: rgba(99, 102, 241, 0.15)"
+              >
+                🔍
+              </div>
+              <h3>Unified Multi-Violation Framework</h3>
+              <p style="font-size: 14px">
+                Kiến trúc tích hợp cho phép xử lý đồng thời
+                <strong style="color: var(--text)">nhiều loại vi phạm</strong>
+                (mũ bảo hiểm, đèn đỏ) trong một pipeline thống nhất, sử dụng
+                chung unified model và infrastructure.
+              </p>
+            </div>
+            <div class="card">
+              <div
+                class="icon-circle"
+                style="background: rgba(34, 211, 238, 0.15)"
+              >
+                ⚡
+              </div>
+              <h3>Dual-Strategy Helmet Detection</h3>
+              <p style="font-size: 14px">
+                Chiến lược phát hiện kép:
+                <strong style="color: var(--text)">Direct Detection</strong> (ưu
+                tiên) +
+                <strong style="color: var(--text)"
+                  >Inference-based Fallback</strong
+                >, cải thiện recall khi model không detect được without_helmet.
+              </p>
+            </div>
+            <div class="card">
+              <div
+                class="icon-circle"
+                style="background: rgba(52, 211, 153, 0.15)"
+              >
+                🚦
+              </div>
+              <h3>HSV-YOLO Hybrid Light Detection</h3>
+              <p style="font-size: 14px">
+                Kết hợp
+                <strong style="color: var(--text)">HSV thresholding</strong>
+                (nhanh, ~8ms) với
+                <strong style="color: var(--text)">YOLO fallback</strong>
+                (robust) cho nhận dạng trạng thái đèn giao thông — cân bằng
+                speed và accuracy.
+              </p>
+            </div>
+            <div class="card">
+              <div
+                class="icon-circle"
+                style="background: rgba(251, 113, 133, 0.15)"
+              >
+                🌐
+              </div>
+              <h3>Production-Ready Architecture</h3>
+              <p style="font-size: 14px">
+                Kiến trúc end-to-end hoàn chỉnh: video streaming (<strong
+                  style="color: var(--text)"
+                  >Kafka</strong
+                >), persistence (<strong style="color: var(--text)"
+                  >PostgreSQL</strong
+                >), real-time dashboard (<strong style="color: var(--text)"
+                  >Next.js + FastAPI + WebSocket</strong
+                >).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SLIDE 3: Dataset ===== -->
+      <div class="slide" data-slide="2">
+        <div class="glow glow-1"></div>
+        <div class="full-w">
+          <div class="section-label">
+            <span class="tag tag-emerald">02</span>
+            <h2 style="margin: 0">Tóm Tắt Dữ Liệu</h2>
+          </div>
+          <div class="grid-2" style="margin-bottom: 24px">
+            <div class="card">
+              <div style="text-align: center; margin-bottom: 16px">
+                <div class="metric-value gradient-text">7,500</div>
+                <div class="metric-label">
+                  Ảnh gốc → ~15,000 sau augmentation
+                </div>
+              </div>
+              <table>
+                <tr>
+                  <th>Nguồn</th>
+                  <th>Số ảnh gốc</th>
+                </tr>
+                <tr>
+                  <td>Helmet Detection Dataset (Roboflow)</td>
+                  <td>3,500</td>
+                </tr>
+                <tr>
+                  <td>Motorbike Traffic Dataset</td>
+                  <td>2,200</td>
+                </tr>
+                <tr>
+                  <td>Asian Helmet Dataset</td>
+                  <td>1,800</td>
+                </tr>
+              </table>
+              <div
+                style="margin-top: 12px; font-size: 13px; color: var(--muted)"
+              >
+                Split: 80% train · 12% val · 8% test · Image size: 640×640
+              </div>
+            </div>
+            <div class="card">
+              <h3 style="margin-bottom: 12px">8 Classes thống nhất</h3>
+              <table>
+                <tr>
+                  <th>Class</th>
+                  <th>Test instances</th>
+                </tr>
+                <tr>
+                  <td>person</td>
+                  <td>1,847</td>
+                </tr>
+                <tr>
+                  <td>motorcycle</td>
+                  <td>1,523</td>
+                </tr>
+                <tr>
+                  <td>with_helmet</td>
+                  <td>1,102</td>
+                </tr>
+                <tr>
+                  <td>without_helmet</td>
+                  <td>689</td>
+                </tr>
+                <tr>
+                  <td>car</td>
+                  <td>845</td>
+                </tr>
+                <tr>
+                  <td>traffic_light</td>
+                  <td>234</td>
+                </tr>
+              </table>
+              <div
+                style="margin-top: 12px; font-size: 13px; color: var(--muted)"
+              >
+                Format: YOLO (.txt annotations)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SLIDE 4: Architecture ===== -->
+      <div class="slide" data-slide="3">
+        <div class="glow glow-2"></div>
+        <div class="full-w">
+          <div class="section-label">
+            <span class="tag tag-rose">03</span>
+            <h2 style="margin: 0">Mô Hình & Giải Pháp Đề Xuất</h2>
+          </div>
+          <p style="margin-bottom: 20px; font-size: 15px">
+            Kiến trúc
+            <strong style="color: var(--text)">Microservices</strong> — các
+            thành phần tách biệt, giao tiếp qua Apache Kafka
+          </p>
+          <div class="arch-flow">
+            <div class="arch-box">
+              <div class="ab-icon">📹</div>
+              <div class="ab-label">Camera / Video</div>
+              <div class="ab-tech">HCM City API</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="arch-box" style="border-color: var(--emerald)">
+              <div class="ab-icon">📤</div>
+              <div class="ab-label">Video Producer</div>
+              <div class="ab-tech">15 FPS · Base64</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="arch-box" style="border-color: var(--amber)">
+              <div class="ab-icon">📨</div>
+              <div class="ab-label">Apache Kafka</div>
+              <div class="ab-tech">Message Broker</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="arch-box" style="border-color: var(--accent2)">
+              <div class="ab-icon">🧠</div>
+              <div class="ab-label">3 Consumers</div>
+              <div class="ab-tech">YOLOv8 Detect</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="arch-box" style="border-color: var(--cyan)">
+              <div class="ab-icon">⚙️</div>
+              <div class="ab-label">FastAPI</div>
+              <div class="ab-tech">REST + WebSocket</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="arch-box" style="border-color: var(--rose)">
+              <div class="ab-icon">📊</div>
+              <div class="ab-label">Dashboard</div>
+              <div class="ab-tech">Next.js</div>
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top: 24px">
+            <div class="card">
+              <h3 style="color: var(--rose)">
+                🪖 Helmet — Dual-Strategy Detection
+              </h3>
+              <p style="font-size: 13px">
+                <strong style="color: var(--text)">Strategy 1 (Direct):</strong>
+                YOLO detect without_helmet → match person → match vehicle →
+                violation<br /><strong style="color: var(--text)"
+                  >Strategy 2 (Fallback):</strong
+                >
+                Nếu không detect được → suy luận từ absence of helmet trong head
+                region<br />CentroidTracker + ViolationDeduplicator (3s, 50px)
+              </p>
+            </div>
+            <div class="card">
+              <h3 style="color: var(--amber)">🚦 RedLight — HSV-YOLO Hybrid</h3>
+              <p style="font-size: 13px">
+                <strong style="color: var(--text)">Primary:</strong> Static ROI
+                + HSV color thresholding (~8ms)<br /><strong
+                  style="color: var(--text)"
+                  >Fallback:</strong
+                >
+                YOLO detect 'traffic light' → HSV analysis<br />Stop line
+                crossing check + Direction-aware violation
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SLIDE 5: Results 1 ===== -->
+      <div class="slide" data-slide="4">
+        <div class="glow glow-1"></div>
+        <div class="full-w">
+          <div class="section-label">
+            <span class="tag tag-indigo">04</span>
+            <h2 style="margin: 0">Kết Quả Thực Nghiệm</h2>
+          </div>
+          <div class="grid-4" style="margin-bottom: 24px">
+            <div class="card metric">
+              <div class="metric-value" style="color: var(--accent2)">
+                86.6%
+              </div>
+              <div class="metric-label">Overall mAP@50</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-value" style="color: var(--emerald)">
+                89.9%
+              </div>
+              <div class="metric-label">without_helmet mAP@50</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-value" style="color: var(--cyan)">28 FPS</div>
+              <div class="metric-label">Processing Speed</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-value" style="color: var(--amber)">380ms</div>
+              <div class="metric-label">End-to-End Latency</div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <h3>YOLOv8s Unified Model — Per-class</h3>
+              <table>
+                <tr>
+                  <th>Class</th>
+                  <th>mAP@50</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                </tr>
+                <tr>
+                  <td>car</td>
+                  <td>94.7%</td>
+                  <td>92.1%</td>
+                  <td>91.5%</td>
+                </tr>
+                <tr>
+                  <td>person</td>
+                  <td>94.4%</td>
+                  <td>91.8%</td>
+                  <td>90.2%</td>
+                </tr>
+                <tr>
+                  <td>with_helmet</td>
+                  <td>95.8%</td>
+                  <td>93.5%</td>
+                  <td>92.7%</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td>without_helmet</td>
+                  <td>89.9%</td>
+                  <td>87.4%</td>
+                  <td>85.6%</td>
+                </tr>
+                <tr>
+                  <td>motorcycle</td>
+                  <td>64.9%</td>
+                  <td>71.2%</td>
+                  <td>63.8%</td>
+                </tr>
+                <tr>
+                  <td>traffic_light</td>
+                  <td>78.3%</td>
+                  <td>82.1%</td>
+                  <td>74.5%</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>all</strong></td>
+                  <td><strong>86.6%</strong></td>
+                  <td><strong>84.3%</strong></td>
+                  <td><strong>82.1%</strong></td>
+                </tr>
+              </table>
+            </div>
+            <div class="card">
+              <h3>System Performance</h3>
+              <table>
+                <tr>
+                  <th>Metric</th>
+                  <th>Measured</th>
+                  <th>Target</th>
+                  <th>Status</th>
+                </tr>
+                <tr>
+                  <td>End-to-end latency</td>
+                  <td>380ms</td>
+                  <td>&lt;500ms</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td>Processing FPS</td>
+                  <td>28 FPS</td>
+                  <td>≥25 FPS</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td>Kafka throughput</td>
+                  <td>156 msg/s</td>
+                  <td>≥100 msg/s</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td>Dashboard refresh</td>
+                  <td>1s</td>
+                  <td>≤2s</td>
+                  <td>✅</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SLIDE 6: Results 2 - Comparison ===== -->
+      <div class="slide" data-slide="5">
+        <div class="glow glow-3"></div>
+        <div class="full-w">
+          <div class="section-label">
+            <span class="tag tag-indigo">05</span>
+            <h2 style="margin: 0">So Sánh Với Các Nghiên Cứu Trước</h2>
+          </div>
+          <div class="grid-2" style="margin-bottom: 24px">
+            <div class="card">
+              <h3>Helmet Violation Detection</h3>
+              <table>
+                <tr>
+                  <th>Công trình</th>
+                  <th>Phương pháp</th>
+                  <th>mAP@50</th>
+                  <th>FPS</th>
+                </tr>
+                <tr>
+                  <td>Silva [5]</td>
+                  <td>Faster R-CNN</td>
+                  <td>89.2%</td>
+                  <td>12</td>
+                </tr>
+                <tr>
+                  <td>Singh [6]</td>
+                  <td>YOLOv3</td>
+                  <td>87.0%</td>
+                  <td>35</td>
+                </tr>
+                <tr>
+                  <td>Jia [7]</td>
+                  <td>YOLOv5s</td>
+                  <td>91.3%</td>
+                  <td>45</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td>Đề tài</td>
+                  <td>YOLOv8s</td>
+                  <td>89.9%</td>
+                  <td>28</td>
+                </tr>
+              </table>
+              <div
+                style="margin-top: 8px; font-size: 12px; color: var(--muted)"
+              >
+                FPS thấp hơn do pipeline Dual-Strategy + Tracker
+              </div>
+            </div>
+            <div class="card">
+              <h3>Red Light Running Detection</h3>
+              <table>
+                <tr>
+                  <th>Công trình</th>
+                  <th>Light Detection</th>
+                  <th>Detection Rate</th>
+                </tr>
+                <tr>
+                  <td>Chen [10]</td>
+                  <td>YOLOv4</td>
+                  <td>94%</td>
+                </tr>
+                <tr>
+                  <td>Nguyen [11]</td>
+                  <td>YOLOv5s</td>
+                  <td>92.3%</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td>Đề tài</td>
+                  <td>HSV + YOLO</td>
+                  <td>90.1%</td>
+                </tr>
+              </table>
+              <div
+                style="margin-top: 8px; font-size: 12px; color: var(--muted)"
+              >
+                Hybrid approach: cân bằng speed/robustness
+              </div>
+            </div>
+          </div>
+          <div class="card full-w">
+            <h3>Tổng hợp khoảng trống nghiên cứu</h3>
+            <table>
+              <tr>
+                <th>Khoảng trống</th>
+                <th>Ảnh hưởng</th>
+                <th style="color: var(--accent2)">Giải pháp của đề tài</th>
+              </tr>
+              <tr>
+                <td>Single detection strategy</td>
+                <td>Bỏ sót vi phạm khi model miss</td>
+                <td>
+                  <strong style="color: var(--text)"
+                    >Dual-Strategy Detection với fallback</strong
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>HSV hoặc DL riêng lẻ</td>
+                <td>Trade-off speed/robustness</td>
+                <td>
+                  <strong style="color: var(--text)"
+                    >Hybrid: HSV primary + YOLO fallback</strong
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>Thiếu multi-violation</td>
+                <td>Cần nhiều hệ thống</td>
+                <td>
+                  <strong style="color: var(--text)"
+                    >Unified pipeline cho helmet + red light</strong
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>Thiếu production pipeline</td>
+                <td>Không scalable</td>
+                <td>
+                  <strong style="color: var(--text)"
+                    >Kafka + FastAPI + Next.js</strong
+                  >
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SLIDE 7: Case Studies ===== -->
+      <div class="slide" data-slide="6">
+        <div class="glow glow-2"></div>
+        <div class="full-w">
+          <div class="section-label">
+            <span class="tag tag-emerald">06</span>
+            <h2 style="margin: 0">Case Studies & Phân Tích</h2>
+          </div>
+          <div class="grid-2" style="margin-bottom: 24px">
+            <div class="card" style="border-color: rgba(99, 102, 241, 0.3)">
+              <h3 style="color: var(--accent2)">
+                Case Study 1: Nhiều người trên 1 xe máy
+              </h3>
+              <p style="font-size: 14px; margin-bottom: 12px">
+                <strong style="color: var(--text)">Tình huống:</strong> 3 người
+                trên 1 xe máy, 2 người không đội mũ. Người phía sau bị che
+                khuất.
+              </p>
+              <div class="grid-2" style="gap: 12px">
+                <div
+                  style="
+                    background: rgba(251, 113, 133, 0.08);
+                    padding: 12px;
+                    border-radius: 10px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 24px;
+                      font-weight: 800;
+                      color: var(--rose);
+                    "
+                  >
+                    50%
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted)">
+                    Direct Only (1/2)
+                  </div>
+                </div>
+                <div
+                  style="
+                    background: rgba(52, 211, 153, 0.08);
+                    padding: 12px;
+                    border-radius: 10px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 24px;
+                      font-weight: 800;
+                      color: var(--emerald);
+                    "
+                  >
+                    100%
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted)">
+                    Dual-Strategy (2/2)
+                  </div>
+                </div>
+              </div>
+              <div
+                style="margin-top: 8px; font-size: 12px; color: var(--muted)"
+              >
+                Fallback phát hiện người thứ 2 do không tìm thấy mũ trong vùng
+                đầu
+              </div>
+            </div>
+            <div class="card" style="border-color: rgba(251, 191, 36, 0.3)">
+              <h3 style="color: var(--amber)">
+                Case Study 2: Đèn chuyển trạng thái
+              </h3>
+              <p style="font-size: 14px; margin-bottom: 12px">
+                <strong style="color: var(--text)">Tình huống:</strong> Đèn
+                chuyển từ vàng → đỏ, xe tăng tốc vượt.
+              </p>
+              <div style="font-size: 14px; color: var(--muted); line-height: 2">
+                <div>
+                  Frame N: <span class="badge badge-yellow">YELLOW</span> →
+                  Không vi phạm
+                </div>
+                <div>
+                  Frame N+5: <span class="badge badge-red">RED</span> →
+                  <strong style="color: var(--text)">Phát hiện vi phạm</strong>
+                </div>
+              </div>
+              <div
+                style="margin-top: 8px; font-size: 12px; color: var(--muted)"
+              >
+                HSV-YOLO Hybrid ghi nhận chính xác thời điểm vi phạm
+              </div>
+            </div>
+          </div>
+          <div class="card full-w">
+            <h3>Các yếu tố ảnh hưởng đến kết quả</h3>
+            <table>
+              <tr>
+                <th>Yếu tố</th>
+                <th>Mức độ</th>
+                <th>Giải pháp khắc phục</th>
+              </tr>
+              <tr>
+                <td>Ánh sáng</td>
+                <td><span class="badge badge-red">Cao</span></td>
+                <td>Điều chỉnh ngưỡng HSV theo vị trí</td>
+              </tr>
+              <tr>
+                <td>Góc camera</td>
+                <td><span class="badge badge-yellow">Trung bình</span></td>
+                <td>Cấu hình ROI cho từng camera</td>
+              </tr>
+              <tr>
+                <td>Mật độ giao thông</td>
+                <td><span class="badge badge-yellow">Trung bình</span></td>
+                <td>Điều chỉnh tham số tracking</td>
+              </tr>
+              <tr>
+                <td>Thời tiết</td>
+                <td><span class="badge badge-red">Cao</span></td>
+                <td>Cần thêm dữ liệu huấn luyện đa dạng</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SLIDE 8: Limitations & Future ===== -->
+      <div class="slide" data-slide="7">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="full-w">
+          <div class="section-label">
+            <span class="tag tag-rose">07</span>
+            <h2 style="margin: 0">Giới Hạn & Hướng Phát Triển</h2>
+          </div>
+          <div class="grid-2">
+            <div class="card" style="border-color: rgba(251, 113, 133, 0.3)">
+              <h3 style="color: var(--rose)">⚠️ Hạn Chế Hiện Tại</h3>
+              <ul class="feature-list" style="margin-top: 12px">
+                <li>
+                  <span
+                    class="li-icon"
+                    style="
+                      background: rgba(251, 113, 133, 0.15);
+                      color: var(--rose);
+                    "
+                    >1</span
+                  ><span
+                    >Dataset bias — đa số ảnh ban ngày, thiếu ban đêm & thời
+                    tiết xấu</span
+                  >
+                </li>
+                <li>
+                  <span
+                    class="li-icon"
+                    style="
+                      background: rgba(251, 113, 133, 0.15);
+                      color: var(--rose);
+                    "
+                    >2</span
+                  ><span
+                    >Đơn camera — chưa hỗ trợ kết hợp nhiều camera, theo dõi qua
+                    các góc nhìn</span
+                  >
+                </li>
+                <li>
+                  <span
+                    class="li-icon"
+                    style="
+                      background: rgba(251, 113, 133, 0.15);
+                      color: var(--rose);
+                    "
+                    >3</span
+                  ><span
+                    >CentroidTracker đơn giản — có thể nhầm ID khi hai xe giao
+                    nhau</span
+                  >
+                </li>
+                <li>
+                  <span
+                    class="li-icon"
+                    style="
+                      background: rgba(251, 113, 133, 0.15);
+                      color: var(--rose);
+                    "
+                    >4</span
+                  ><span>Chưa tích hợp OCR nhận dạng biển số xe</span>
+                </li>
+                <li>
+                  <span
+                    class="li-icon"
+                    style="
+                      background: rgba(251, 113, 133, 0.15);
+                      color: var(--rose);
+                    "
+                    >5</span
+                  ><span
+                    >Ngưỡng HSV cố định — cần hiệu chỉnh riêng cho từng
+                    camera</span
+                  >
+                </li>
+              </ul>
+            </div>
+            <div>
+              <div
+                class="card"
+                style="
+                  border-color: rgba(52, 211, 153, 0.3);
+                  margin-bottom: 16px;
+                "
+              >
+                <h3 style="color: var(--emerald)">🚀 Ngắn Hạn (1–2 tháng)</h3>
+                <ul class="feature-list" style="margin-top: 8px">
+                  <li>
+                    <span
+                      class="li-icon"
+                      style="
+                        background: rgba(52, 211, 153, 0.12);
+                        color: var(--emerald);
+                      "
+                      >→</span
+                    ><span>Thay CentroidTracker bằng DeepSORT</span>
+                  </li>
+                  <li>
+                    <span
+                      class="li-icon"
+                      style="
+                        background: rgba(52, 211, 153, 0.12);
+                        color: var(--emerald);
+                      "
+                      >→</span
+                    ><span>Thu thập thêm data đêm & thời tiết xấu</span>
+                  </li>
+                  <li>
+                    <span
+                      class="li-icon"
+                      style="
+                        background: rgba(52, 211, 153, 0.12);
+                        color: var(--emerald);
+                      "
+                      >→</span
+                    ><span>Triển khai ngưỡng HSV tự thích ứng</span>
+                  </li>
+                </ul>
+              </div>
+              <div
+                class="card"
+                style="
+                  border-color: rgba(34, 211, 238, 0.3);
+                  margin-bottom: 16px;
+                "
+              >
+                <h3 style="color: var(--cyan)">📈 Trung Hạn (3–6 tháng)</h3>
+                <ul class="feature-list" style="margin-top: 8px">
+                  <li>
+                    <span
+                      class="li-icon"
+                      style="
+                        background: rgba(34, 211, 238, 0.12);
+                        color: var(--cyan);
+                      "
+                      >→</span
+                    ><span>Tích hợp OCR nhận dạng biển số xe</span>
+                  </li>
+                  <li>
+                    <span
+                      class="li-icon"
+                      style="
+                        background: rgba(34, 211, 238, 0.12);
+                        color: var(--cyan);
+                      "
+                      >→</span
+                    ><span
+                      >Theo dõi đa camera + huấn luyện bộ phân loại đèn
+                      riêng</span
+                    >
+                  </li>
+                </ul>
+              </div>
+              <div class="card" style="border-color: rgba(99, 102, 241, 0.3)">
+                <h3 style="color: var(--accent2)">🌐 Dài Hạn (6–12 tháng)</h3>
+                <ul class="feature-list" style="margin-top: 8px">
+                  <li>
+                    <span
+                      class="li-icon"
+                      style="
+                        background: rgba(99, 102, 241, 0.12);
+                        color: var(--accent2);
+                      "
+                      >→</span
+                    ><span
+                      >Edge deployment (TensorRT), mobile app, tích hợp xử phạt
+                      nguội</span
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end slide-container -->
+
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+      <button id="prevBtn" onclick="changeSlide(-1)" disabled>‹</button>
+      <div class="dots" id="dots"></div>
+      <button id="nextBtn" onclick="changeSlide(1)">›</button>
+      <div class="slide-counter" id="counter">1 / 8</div>
+    </nav>
+
+    <script>
+      let current = 0;
+      const slides = document.querySelectorAll(".slide");
+      const total = slides.length;
+      const dotsEl = document.getElementById("dots");
+      const counter = document.getElementById("counter");
+      const progress = document.getElementById("progress");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+
+      // Create dots
+      for (let i = 0; i < total; i++) {
+        const d = document.createElement("div");
+        d.className = "dot" + (i === 0 ? " active" : "");
+        d.onclick = () => goToSlide(i);
+        dotsEl.appendChild(d);
+      }
+
+      function goToSlide(n) {
+        if (n < 0 || n >= total || n === current) return;
+        const old = current;
+        current = n;
+        slides[old].classList.remove("active");
+        slides[old].classList.add("prev");
+        slides[current].classList.add("active");
+        // Clean old slide after transition
+        setTimeout(() => {
+          slides[old].classList.remove("prev");
+        }, 600);
+        updateUI();
+      }
+
+      function changeSlide(dir) {
+        goToSlide(current + dir);
+      }
+
+      function updateUI() {
+        document
+          .querySelectorAll(".dot")
+          .forEach((d, i) => d.classList.toggle("active", i === current));
+        counter.textContent = `${current + 1} / ${total}`;
+        progress.style.width = `${((current + 1) / total) * 100}%`;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === total - 1;
+      }
+
+      // Keyboard
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " ") changeSlide(1);
+        if (e.key === "ArrowLeft") changeSlide(-1);
+      });
+
+      // Touch
+      let tx = 0;
+      document.addEventListener(
+        "touchstart",
+        (e) => (tx = e.touches[0].clientX),
+      );
+      document.addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].clientX - tx;
+        if (Math.abs(dx) > 50) {
+          dx < 0 ? changeSlide(1) : changeSlide(-1);
+        }
+      });
+
+      updateUI();
+    </script>
+  </body>
+</html>
